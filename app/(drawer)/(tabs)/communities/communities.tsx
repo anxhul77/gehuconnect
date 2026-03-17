@@ -4,7 +4,7 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import React from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import CommunityCard from "../../components/community/CommunityCard";
+import CommunityCard from "../../../components/community/CommunityCard";
 
 export default function Communities() {
   const headerHeight = useHeaderHeight();

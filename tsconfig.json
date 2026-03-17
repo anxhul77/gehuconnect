@@ -14,5 +14,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
-, "app/components/Inputform/FormButton.tsx"  ]
+, "app/components/Inputform/FormButton.tsx", "app/(drawer)/(tabs)/communities/[communityId]", "app/(drawer)/voice", "app/(drawer)/channels"  ]
 }

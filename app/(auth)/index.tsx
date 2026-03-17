@@ -1,24 +1,44 @@
-import { View, Text, Pressable } from 'react-native'
+import { View, Text,   } from 'react-native'
 import React from 'react'
-import InputForm from '../components/Inputform/InputForm'
-import { NeumorphicButton } from '../components/Inputform/FormButton'
+import { Image } from 'expo-image'
+import AuthButton from '../components/AuthButton'
+import { AntDesign, Fontisto } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 
 
 
 const index = () => {
-  const router=useRouter()
-  const handleOnPress=()=>{
-    router.push("/(tabs)")
-  }
+  const router=useRouter();
+ const onGooglePress=()=>{
+     router.push("/(auth)/RegisterForm")
+ }
+ const redirecttabs=()=>{
+    router.push("/(drawer)/(tabs)")
+ }
+function handleLoginEmail(){
+  router.push("/(auth)/login")
+}
   return (
-    <View className='flex-1 justify-center items-center '>
-  <InputForm></InputForm> 
-  <Pressable onPress={()=>{handleOnPress()}}>
-    <Text className='test-white mb-48'>
-         skip
-    </Text>
-  </Pressable>
+    <View  className='bg-black flex-1 items-center pt-16'>
+     <View className=''>
+      <Image   source={require("../../assets/images/logoremovedbg.png")}
+        contentFit="cover"
+        transition={200}
+        style={{
+          width: "100%",
+          aspectRatio: 12 / 9,
+        }}/>
+        </View>
+        <View className='flex items-center gap-3'>
+        <Text className=' font-bold text-5xl text-[#FF6B35]'>GEU Connect</Text>
+        <Text className="text-slate-300 px-5 text-center">Your campus community platform for students and clubs</Text>
+        </View>
+        <View className='w-full flex justify-center items-center mt-8 px-6 gap-5'>
+          <AuthButton handleOnPress={onGooglePress} text={"Continue with Google"} icon={<AntDesign name="google" size={24} color="white" />}></AuthButton>
+          <AuthButton handleOnPress={redirecttabs} text={"Continue with Apple"} icon={<AntDesign name="apple" size={24} color="white" />}></AuthButton>
+          <AuthButton handleOnPress={handleLoginEmail} text={"Continue with Email"} icon={<Fontisto name="email" size={24} color="white" />}></AuthButton>
+        </View>
+     <Text className='text-white mt-3'>Already have an account? login </Text>
     </View>
   )
 }

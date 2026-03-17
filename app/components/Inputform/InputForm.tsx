@@ -4,10 +4,11 @@ import { Entypo, FontAwesome } from "@expo/vector-icons";
 import FormInputField from "./FormInputField";
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
+import { useLoginMutation } from "@/src/features/auth.api";
 
 const InputForm = () => {
-  const router = useRouter();
-
+ const router=useRouter();
+ const[login,{isLoading,error,isSuccess},] =useLoginMutation();
   const {
     control,
     handleSubmit,
@@ -20,9 +21,23 @@ const InputForm = () => {
     },
   });
 
-  const onSubmit = (data: any) => {
-    console.log(data);
-    router.navigate("/(tabs)");
+  const onSubmit = async (data: any) => {
+    try{
+      
+           const payload={
+            "email":data.email,
+            "password":data.password
+           }
+               console.log("payload        ................................................................",payload)
+           await login(payload).unwrap()
+     if(isSuccess){
+      console.log(isSuccess)
+      router.push("/(drawer)/(tabs)")
+     }
+    }
+     catch(error){
+          console.log(error)
+     }
   };
 
   return (

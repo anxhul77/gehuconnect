@@ -1,12 +1,12 @@
-import { Link } from "expo-router";
+
 import { ScrollView, Text, View } from "react-native";
 import Feedpostcard from "../../components/Feedpostcard";
 import type{ AppDispatch } from '@/src/store/Store';
 import { useDispatch } from 'react-redux';
 
 
-import { useEffect, useRef, useState } from "react";
-import { RegisterUser } from "../../../src/store/actions";
+import {  useState } from "react";
+
 export default function Index() {
    const [loading,setLoading]=useState(false);
    const dispatch=useDispatch<AppDispatch>();

@@ -1,7 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface CommunityCardProps {
   name: string;
@@ -18,12 +19,16 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
   imageUrl,
   isJoined,
 }) => {
+  const router=useRouter();
+   function handleCommunnityPress(){
+    router.push("/(drawer)/(tabs)/communities/[communityId]")
+  }
   return (
-    <View
+    <Pressable onPress={()=> handleCommunnityPress()}
       style={styles.cardContainer}
       className="mr-4 border border-white/5 overflow-hidden"
     >
-      {/* 1. Background Image Section */}
+    
       <View style={StyleSheet.absoluteFill}>
         {imageUrl ? (
           <>
@@ -42,7 +47,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
         )}
       </View>
 
-      {/* 2. Content Overlay */}
+
       <View className="flex-1 p-3 justify-end">
         <Text
           className="text-white font-bold text-[13px] mb-0.5"
@@ -68,7 +73,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

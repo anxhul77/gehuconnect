@@ -1,16 +1,12 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+
 import { Stack } from 'expo-router'
 
-const _layout = () => {
+export default function _Layout() {
   return (
-   <Stack>
-    <Stack.Screen name="index" options={{headerShown:false}}/>
-      
-  
-
-   </Stack>
+    <Stack screenOptions={{ headerShown: true, }}>
+      <Stack.Screen name="index" options={{headerShown:false}} />
+      <Stack.Screen name="login" />
+      <Stack.Screen name="registerform" options={{headerBackTitle:"Back"}}/>
+    </Stack>
   )
 }
-
-export default _layout

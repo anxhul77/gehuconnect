@@ -1,20 +1,18 @@
+// store.ts
 import { configureStore } from '@reduxjs/toolkit'
-import authReducer from './reducers/authReducer'
-import commentsReducer from './reducers/commentsReducer'
-import postsReducer from './reducers/postsReducer'
-import { errorReducer } from './reducers/errorReducer'
+import authReducer from './slices/auth.slice'
+import { api } from './api'
+
 
 
 export const store = configureStore({
   reducer: {
-    posts: postsReducer,
-    comments: commentsReducer,
     auth: authReducer,
-    errors:errorReducer
-  }
+    [api.reducerPath]: api.reducer
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(api.middleware),
 })
 
 export type RootState = ReturnType<typeof store.getState>
-
 export type AppDispatch = typeof store.dispatch
-export type AppStore = typeof store

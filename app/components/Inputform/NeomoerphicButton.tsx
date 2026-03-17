@@ -10,10 +10,10 @@ export default function NeomoerphicButtonss() {
           endColor={'#e0e0e0'}
           offset={[1,1]}
           
-          // ... other shadow props for the second shadow ...
+          
           style={{
             borderRadius: 20,
-            backgroundColor: '#0A0A0A', // Match background color for the effect
+            backgroundColor: '#0A0A0A', 
             width: 300,
             height: 50,
             justifyContent: 'center',
