@@ -12,7 +12,7 @@ import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Image } from 'expo-image';
 
-import AcadmicsHeader from '@/app/components/acadmics/AcadmicsHeader';
+import AcadmicsHeader from '@/app/components/acadmecis/AcadmecisHeader';
 import ApplicationHeader  from '@/app/components/ApplicationHeader';
 
 
@@ -44,7 +44,7 @@ export default function _Layout(){
             paddingTop: 5
           },
           tabBarStyle: {
-            position: 'absolute',
+           
             height:insets.bottom+55,
             borderTopWidth: 1,
             borderLeftWidth:0.5,
@@ -82,8 +82,8 @@ export default function _Layout(){
               }
              
             />
-           <Tabs.Screen name="acadmics"
-                     options={{title:"Acadmics",tabBarIcon:({focused,size})=>(
+           <Tabs.Screen name="acadmecis"
+                     options={{title:"Acadmecis",tabBarIcon:({focused,size})=>(
                     <Feather name="book-open" size={size} color={focused? "#FF6B35": "#999"} />), header:()=>(<AcadmicsHeader/>),}}></Tabs.Screen>
 
                      
@@ -94,6 +94,7 @@ export default function _Layout(){
                 <FontAwesome name="shopping-bag" size={size} color={focused? "#FF6B35": "#999"}  />
                 
             ), headerShown:false}}/>
+
         </Tabs>
        
        

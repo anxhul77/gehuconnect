@@ -84,8 +84,69 @@ export interface Product{
      quantity:string
     description:string
      price:string
+     image:string[]
+     discount:string
+    specialPrice:string
+     category:string
+     likes:string
+     seen:string
+     listingStatus:string
+     isNegotiable:boolean
+     isUrgentSale:boolean
+     productTags:string[]
+} 
+export interface CreateProductRequest {
+  productName: string;
+  quantity: number;
+  description: string;
+  price: number;
+  image: string[];
+  discount?: number;
+  status: ListingStatus;
+  isNegotitable: boolean;
+  isUrgentSale: boolean;
+  tags: string[];
+  productConditionId: number;
+}
+export enum ListingStatus {
+  DRAFT="DRAFT",
+  SOLD = "SOLD",
+  PUBLISHED = "PUBLISHED",
+  DELETED="DELETED"
+
+}
+export interface ItemCardProps {
+  item:{
+    productId:string
+     sellerDto:any
+    productName:string
+     quantity:string
+    description:string
+     price:string
      image:string
      discount:string
     specialPrice:string
      category:string
-} 
+  }
+}
+export interface Subject{
+  subjectId:string,
+  subjectName:string
+}
+export interface ProductCondition{
+  id:string,
+  name:string
+}
+export interface SellerStats{
+      totalViews:string
+      activeProducts:string
+       totalProducts:string
+       pausedProducts:string
+      soldProducts:string
+}
+export interface SellerDashBoardData{
+   stats:SellerStats,
+   products:any
+   hasMore:boolean
+   nextCursor:string
+}

@@ -1,42 +1,18 @@
 import { api } from "../store/api";
-import { Product } from "../types/types";
+import { CreateProductRequest, ListingStatus, Product, ProductCondition, SellerDashBoardData, SellerStats } from "../types/types";
 
 export const marketplaceApi = api.injectEndpoints({
   endpoints: (builder) => ({
 
-    getProducts: builder.query<
-      {
-        content: Product[]
-        nextCursor: string | null
-        hasMore: boolean
-      },
-      {
-        category?: string
-        keyword?: string
-        sortBy?: string
-        sortOrder?: string
-        cursor?: string | null
-        limit?: number
+    getProducts: builder.query<{content: Product[],nextCursor: string | null,hasMore: boolean
+      }, {category?: string,keyword?: string,sortBy?: string,sortOrder?: string,cursor?: string | null,limit?: number
       }
-    >({
-      query: ({
-        category,
-        keyword,
-        sortBy ,
-        cursor,
-        limit = 10,
+    >({query: ({ category, keyword,sortBy ,cursor,sortOrder,limit = 10,
       }) => ({
         url: `/public/products`,
-        params: {
-          category,
-          keyword,
-          sortBy,
-          cursor,
-          limit,
+        params: {category,keyword,sortBy,cursor,sortOrder,limit,
         },
       }),
-
-  
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
       
         const { cursor, ...rest } = queryArgs
@@ -62,20 +38,37 @@ export const marketplaceApi = api.injectEndpoints({
         currentCache.hasMore = newItems.hasMore
       },
 
-      forceRefetch({ currentArg, previousArg }) {
-        
-        return (
-          currentArg?.category !== previousArg?.category ||
-          currentArg?.keyword !== previousArg?.keyword ||
-          currentArg?.sortBy !== previousArg?.sortBy
-        )
-      },
-
+   forceRefetch({ currentArg, previousArg }) {
+  return (
+    currentArg?.category !== previousArg?.category ||
+    currentArg?.keyword !== previousArg?.keyword ||
+    currentArg?.sortBy !== previousArg?.sortBy ||
+    currentArg?.sortOrder !== previousArg?.sortOrder
+  )
+}
     }),
+    addProducts: builder.mutation<Product, { createProductRequest: CreateProductRequest; categoryId: string }>({
+      query: ({ createProductRequest, categoryId }) => ({
+        url: `/admin/products/${categoryId}/product`,
+        method: "POST",
+        body: createProductRequest,
+      }),
+    }),
+    
+    getProductConditions: builder.query<ProductCondition[], void>({
+      query: () => ({
+        url: "/productCondition/getAllProductConditions",
+      }),
+    }),
+    getSellerDashboard:builder.query<SellerDashBoardData,{listingStatus:string,cursor:string}>({
+       query: ({listingStatus,cursor}) => ({
+        url: "/products/getSellerListingsStats",
+        method:'GET',
+        params:{listingStatus,cursor}
+      }),
+    })
 
   }),
-})
+});
 
-export const {
-  useGetProductsQuery,
-} = marketplaceApi
+export const { useGetProductsQuery, useAddProductsMutation, useGetProductConditionsQuery,useGetSellerDashboardQuery } = marketplaceApi

@@ -1,6 +1,6 @@
-import { View, Text, Pressable } from 'react-native'
-import React from 'react'
-import { Category } from '@/src/types/types'
+import {  Text, Pressable } from 'react-native'
+
+
 interface CategoryItem{
   item:{
     categoryId:string
@@ -26,19 +26,16 @@ export default function CategoryCard({item, selectedCategory, setSelectedCategor
   <Pressable
             key={item?.categoryId}
             onPress={handleOnPress}
-            style={({ pressed }) => [
-              { opacity: pressed ? 0.8 : 1 },
-              
-            ]}
-            className={`mr-2 px-4 py-2 rounded-full border bg-[#FF4D4D"] ${
+           
+            className={` items-center justify-center rounded-full border px-4 h-10 ${
                  selected
-                ? "border-transparent"
-                : "bg-zinc-900/50 border-white/5"
+                ? "bg-[#FFFFFF] border-[#FFFFFF]"
+                : "bg-[#1A1A1A]  border-[#2A2A2A]"
             }`}
           >
-            <Text
-              className={`text-xs font-bold ${
-                  selected ? "text-white" : "text-zinc-400"
+            <Text style={{fontWeight:800}}
+              className={`text-md  ${
+                  selected ? "text-[#0A0A0A]" : "text-[#B3B3B3]"
               }`}
             >
               {item?.categoryName}

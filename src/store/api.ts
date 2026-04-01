@@ -1,7 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { RootState } from '@/src/store/Store'
-import { logout, setCredentials } from '@/src/store/slices/auth.slice'
+
 import { getRefreshToken, saveTokens } from '@/src/lib/storage'
+import { logout, setCredentials } from './slices/auth.slice'
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.EXPO_PUBLIC_BACK_END_URL,

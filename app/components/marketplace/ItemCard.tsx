@@ -9,21 +9,10 @@ import { Image } from "expo-image";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import TagCard from "./TagCard";
+import { useRouter } from "expo-router";
+import { ItemCardProps } from "@/src/types/types";
 
-interface ItemCardProps {
-  item:{
-    productId:string
-     sellerDto:any
-    productName:string
-     quantity:string
-    description:string
-     price:string
-     image:string
-     discount:string
-    specialPrice:string
-     category:string
-  }
-}
+
 
 
 
@@ -31,14 +20,17 @@ interface ItemCardProps {
 export default function ItemCard({
  item
 }: ItemCardProps) {
-
+  const router =useRouter();
+ function handleByPress(){
+    router.push(`/components/marketplace/${item?.productId}`)
+ }
 
   return (
-    <View style={styles.card} className="  border border-white/15">
+    <View style={styles.card} className="  border  border-[#2A2A2A]">
     
       <View className="h-44 w-full relative">
         <Image
-          source={{ uri: item?.image }}
+          source={{ uri: item?.image[0] }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           transition={200}
@@ -88,13 +80,13 @@ export default function ItemCard({
         
         <TagCard color="#3b82f6" label="tag" icon={""}></TagCard>
         <View className=" flex-row  mr-2 items-center ml-2 mb-2 mt-2">
-        <FontAwesome name="heart-o" size={12} color="white" />
-        <Text className="text-white ml-1 mr-2" style={{fontSize:10}}>20</Text>
-         <Feather name="eye" size={12} color="white" />
-         <Text className="text-white ml-1" style={{fontSize:10}}>20</Text>
+        <FontAwesome name="heart-o" size={12} color="#B3B3B3" />
+        <Text className="text-[#B3B3B3] ml-1 mr-2" style={{fontSize:10}}>20</Text>
+         <Feather name="eye" size={12} color="#B3B3B3" />
+         <Text className="text-[#B3B3B3] ml-1" style={{fontSize:10}}>20</Text>
          </View>
        
-        <Pressable
+        <Pressable  onPress={handleByPress}
           style={({ pressed }) => [
             {
               opacity: pressed ? 0.8 : 1,

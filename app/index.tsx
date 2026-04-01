@@ -4,10 +4,8 @@ import { Provider, useSelector } from "react-redux";
 import { RootState, store } from "../src/store/Store";
 import 'react-native-reanimated';
 
-import { useEffect, useState } from "react";
-import { View,Text } from "react-native";
-import { useAuthBootstrap } from "@/src/hooks/useAuthBootStrap";
  import "text-encoding"
+import Toast from "react-native-toast-message";
 
 
 export default function index() {
@@ -40,6 +38,9 @@ console.log("TextDecoder:", typeof TextDecoder);
     <Redirect href="/(auth)" />
   )*/
  return (
+  <>
   <Redirect href="/(auth)"></Redirect>
+
+  </>
  )
 }

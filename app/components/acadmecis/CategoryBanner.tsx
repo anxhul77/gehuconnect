@@ -21,7 +21,7 @@ export default function CategoryIcon({ category, onPress }: CategoryIconProps) {
       style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
       className="w-20 items-center mr-3"
     >
-      {/* Icon Container */}
+     
       <View
         style={{ backgroundColor: `${category.iconColor}15` }}
         className="w-14 h-14 rounded-2xl items-center justify-center mb-2 border border-white/5"
@@ -33,7 +33,7 @@ export default function CategoryIcon({ category, onPress }: CategoryIconProps) {
         />
       </View>
 
-      {/* Title */}
+    
       <Text
         className="text-zinc-400 font-medium text-[10px] text-center"
         numberOfLines={2}
@@ -81,4 +81,4 @@ export const RESOURCE_CATEGORIES: CategoryItem[] = [
     iconName: "flask-outline",
     iconColor: "#3b82f6",
   },
-];
+]

@@ -39,7 +39,7 @@ export default function Index() {
   return (
     <SafeAreaView className="flex-1 flex-row bg-black">
   
-      <View className=" pt-20" style={{width:80}}>
+      <View className=" pt-32" style={{width:80}}>
         <FlatList
           data={communities}
           keyExtractor={(_, i) => i.toString()}
@@ -49,15 +49,10 @@ export default function Index() {
         />
       </View>
 
-      <View className="flex-1 border bg-zinc-800/50 rounded-tl-3xl overflow-hidden">
+      <View className="flex-1 border bg-zinc-800/50 rounded-tl-3xl h-screen overflow-hidden">
    
        <CommunityHeadBar name={Community?.communityName}></CommunityHeadBar>
         <FlatList data={Community?.channelCategories} renderItem={(item)=> <ChannelCategory items={item} ></ChannelCategory>}></FlatList>
-       
-
-
-      
-      
       </View>
     </SafeAreaView>
   );
