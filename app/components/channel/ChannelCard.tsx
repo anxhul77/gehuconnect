@@ -4,13 +4,13 @@ import { Feather, Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 
 
-export default function ChannelCard({item}:{item:any}) {
+export default function ChannelCard({item,communityId}:{item:any,communityId:string | undefined}) {
   const router=useRouter()
 
-  
+    console.log(item)
   function handleOnChannelPress(){
-    router.replace(`/(drawer)/channels/${item?.id}`,
-             
+    router.replace({pathname:`/(drawer)/channels/${item?.id}`,
+         params:{name:item?.name,communityId:communityId}    }
     )
   }
   return (

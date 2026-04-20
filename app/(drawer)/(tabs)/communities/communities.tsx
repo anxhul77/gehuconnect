@@ -1,14 +1,15 @@
 
 import { MaterialIcons } from "@expo/vector-icons"; // Using Expo icons as established
-import { useHeaderHeight } from "@react-navigation/elements";
+
 import React from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import CommunityCard from "../../../components/community/CommunityCard";
+import { useRouter } from "expo-router";
 
 export default function Communities() {
-  const headerHeight = useHeaderHeight();
-
+  
+   const router=useRouter()
   return (
     <SafeAreaProvider className="flex-1 bg-black">
       <ScrollView
@@ -17,10 +18,14 @@ export default function Communities() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{paddingBottom: 40 }}
       >
+        <Pressable className="flex-row items-center mt-2 " onPress={()=>{router.push("/components/community/CreateCommunityPage")}}>
         <Text className="text-white text-2xl  font-bold mb-4 mt-2">
           Popular Clubs
         </Text>
-
+        <View className="w-10 h-10 rounded-full  bg-zinc-800 items-center justify-center mb-4 absolute right-0">
+            <Text className="text-[#71717a] text-3xl">+</Text>
+          </View>
+          </Pressable>
         <ScrollView
          
           horizontal

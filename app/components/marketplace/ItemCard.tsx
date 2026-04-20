@@ -24,7 +24,7 @@ export default function ItemCard({
  function handleByPress(){
     router.push(`/components/marketplace/${item?.productId}`)
  }
-
+   console.log(item)
   return (
     <View style={styles.card} className="  border  border-[#2A2A2A]">
     
@@ -48,7 +48,7 @@ export default function ItemCard({
         
         <Pressable
           style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-          className="absolute top-3 right-3 bg-black/20 p-2 rounded-full"
+          className={ `absolute top-3 right-3 bg-black/20 p-2 rounded-full `}
         >
           <Ionicons name="heart-outline" size={18} color="white" />
         </Pressable>

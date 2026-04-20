@@ -6,16 +6,17 @@ import ChannelCard from './ChannelCard'
 
 interface ChannelCategoryProps{
   items:any
+  communityId:string  | undefined
 }
 
-export default function ChannelCategory({items}:ChannelCategoryProps){
+export default function ChannelCategory({items,communityId}:ChannelCategoryProps){
 
 const [collapsed,setCollapsed]=useState(false)
 
 const channels = items?.item?.channels || []
 
 return(
-
+ 
 <View>
 
 <Pressable
@@ -56,7 +57,7 @@ scrollEnabled={channels.length > 5}
 nestedScrollEnabled={true}
 showsVerticalScrollIndicator={false}
 renderItem={({item})=>(
-<ChannelCard item={item}/>
+<ChannelCard item={item} communityId={communityId}/>
 )}
 />
 

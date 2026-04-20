@@ -6,6 +6,7 @@ import ItemCard from "@/app/components/marketplace/ItemCard";
 import ItemCardLoader from "@/app/components/marketplace/ItemCardLoader";
 import { useGetCategoriesQuery } from "@/src/features/category.api";
 import { useGetProductsQuery } from "@/src/features/marketplace.api";
+import { FlashList } from "@shopify/flash-list";
 
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -66,7 +67,7 @@ export default function Marketplace() {
 
   const { data: products, isLoading: productsLoading } =
     useGetProductsQuery(queryParams);
- 
+
   return (
     <View style={{ flex: 1, backgroundColor: "black" }}>
       <Animated.View
@@ -76,6 +77,7 @@ export default function Marketplace() {
       </Animated.View>
 
       <Animated.FlatList
+        as={FlashList}
         data={productsLoading ? [...Array(6)] : products?.content}
         numColumns={2}
         columnWrapperStyle={{ gap: 12 }}
@@ -93,6 +95,7 @@ export default function Marketplace() {
           { useNativeDriver: true }
         )}
         scrollEventThrottle={16}
+        estimatedItemSize={200}
         renderItem={({ item }) =>
           productsLoading ? <ItemCardLoader /> : <ItemCard item={item} />
         }

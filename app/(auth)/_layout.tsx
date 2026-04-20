@@ -7,6 +7,7 @@ export default function _Layout() {
       <Stack.Screen name="index" options={{headerShown:false}} />
       <Stack.Screen name="login" />
       <Stack.Screen name="registerform" options={{headerBackTitle:"Back"}}/>
+      <Stack.Screen name="loginScreen"options={{headerShown:false}}  />
     </Stack>
   )
 }

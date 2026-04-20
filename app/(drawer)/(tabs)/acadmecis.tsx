@@ -1,6 +1,7 @@
 import CategoryIcon, { RESOURCE_CATEGORIES } from "@/app/components/acadmecis/CategoryBanner";
 import { TRENDING_RESOURCES } from "@/app/components/acadmecis/data";
 import SubjectCard from "@/app/components/acadmecis/SubjectCard";
+import SubjectLoader from "@/app/components/acadmecis/SubjectLoader";
 import TrendingResourceCard from "@/app/components/acadmecis/TrendingResources";
 import { useGetSubjectQuery } from "@/src/features/acadmecis.api";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,7 +26,7 @@ export default function Academics() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
-  const { data: subjects } = useGetSubjectQuery("1");
+  const { data: subjects ,isLoading:subjectLoading,error:subjectError} = useGetSubjectQuery("1");
 
   function handleSubjectCardPress() {
     router.push(`/components/acadmecis/[subjectId]`);
@@ -53,7 +54,7 @@ export default function Academics() {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView
+    <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 100 }}
         keyboardShouldPersistTaps="handled"
@@ -63,14 +64,14 @@ export default function Academics() {
           Browse by Subject
         </Text>
 
-        <ScrollView
+       {  !subjectLoading ? <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingLeft: 16, paddingRight: 16 }}
           style={{ marginBottom: 20 }}
         >
           <View style={{ flexDirection: "column", gap: 12 }}>
-            <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={{ flexDirection: "row", gap: 1 }}>
               {topRow.map((subject) => (
                 <View key={subject.subjectId} style={{ width: 128 }}>
                   <SubjectCard
@@ -80,7 +81,7 @@ export default function Academics() {
                 </View>
               ))}
             </View>
-            <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={{ flexDirection: "row", gap: 1 }}>
               {bottomRow.map((subject) => (
                 <View key={subject.subjectId} style={{ width: 128 }}>
                   <SubjectCard
@@ -91,7 +92,14 @@ export default function Academics() {
               ))}
             </View>
           </View>
-        </ScrollView>
+        </ScrollView>:<>
+          <View className="flex-1  flex-wrap h-72 gap-2 items-center justify-center pl-4 ">
+           {[...Array(6)].map((_, i)=>(<SubjectLoader key={i}></SubjectLoader>))}
+          </View>
+        
+        </>
+        
+    }
 
        
         <Text className="text-white text-lg font-bold mb-3 px-4">

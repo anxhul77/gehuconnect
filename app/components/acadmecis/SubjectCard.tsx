@@ -15,7 +15,7 @@ export default function SubjectCard({ subject, onPress }: SubjectCardProps) {
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-      className="w-32 bg-zinc-800/50 rounded-2xl p-2  mr-2 border "
+      className="w-32 bg-zinc-800/50 rounded-2xl p-2   border "
     >
       
       <View

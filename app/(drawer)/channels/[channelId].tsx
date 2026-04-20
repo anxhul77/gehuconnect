@@ -1,25 +1,37 @@
-// ─────────────────────────────────────────────
-//  Channel.tsx — Discord-style screen
-// ─────────────────────────────────────────────
-
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
+  StyleSheet,
+  Alert,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useBackHandler } from "@react-native-community/hooks";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 
 import MessageList from "@/app/components/messages/MessageList";
 import TextInputModal from "@/app/components/channel/TextInputModal";
 import TypingIndicator from "@/app/components/messages/TypingIndecator";
+import EmojiPicker from "@/app/components/channel/EmojiPicker";
+import { ChannelHeader } from "@/app/components/channel/ChannelHeader";
+import AttachmentTray from "@/app/components/channel/Attachmenttary";
+import PublicFeedInputModal from "@/app/components/channel/PublicFeedInputModal";
+import PostList from "@/app/components/messages/PostList";
+
+import { useAttachmentUpload } from "@/src/utils/UploadToR2";
+import {
+  getCategoryFromMime,
+  LIMITS,
+  LocalAttachment,
+  validateAttachment,
+} from "@/src/types/Attachment.types";
 import {
   useGetMessagesQuery,
   useSendMessageMutation,
@@ -28,10 +40,10 @@ import {
 
 const LOG_TAG = "[Channel]";
 
-// ── Loading skeleton ──────────────────────────
+// ── Loading skeleton ──────────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
-    <View className="flex-1 p-4 gap-3 justify-end">
+    <View style={sk.container}>
       {[
         { w: "60%", right: false },
         { w: "45%", right: true },
@@ -39,146 +51,394 @@ function LoadingSkeleton() {
         { w: "35%", right: true },
         { w: "55%", right: false },
       ].map((s, i) => (
-        <View key={i} className={`flex-row ${s.right ? "justify-end" : "justify-start"}`}>
-          {!s.right && <View className="w-10 h-10 rounded-full bg-[#3F4147] mr-3" />}
-          <View
-            className="h-10 rounded-xl bg-[#3F4147] opacity-60"
-            style={{ width: s.w as any }}
-          />
+        <View key={i} style={[sk.row, s.right ? sk.rowRight : sk.rowLeft]}>
+          {!s.right && <View style={sk.avatar} />}
+          <View style={[sk.bubble, { width: s.w as any }]} />
         </View>
       ))}
     </View>
   );
 }
 
-// ── Error state ───────────────────────────────
+const sk = StyleSheet.create({
+  container: { flex: 1, padding: 16, gap: 12, justifyContent: "flex-end" },
+  row: { flexDirection: "row", alignItems: "center" },
+  rowLeft: { justifyContent: "flex-start" },
+  rowRight: { justifyContent: "flex-end" },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#3F4147",
+    marginRight: 12,
+  },
+  bubble: {
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#3F4147",
+    opacity: 0.6,
+  },
+});
+
+// ── Error state ───────────────────────────────────────────────────────────────
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <View className="flex-1 items-center justify-center gap-3 p-8">
+    <View style={es.container}>
       <Ionicons name="cloud-offline-outline" size={52} color="#4E5058" />
-      <Text className="text-white text-lg font-bold">Couldn't load messages</Text>
-      <Text className="text-[#72767D] text-sm text-center">
-        Check your connection and try again
-      </Text>
-      <TouchableOpacity
-        onPress={onRetry}
-        className="mt-2 flex-row items-center gap-2 bg-[#5865F2] px-5 py-2.5 rounded-full"
-      >
+      <Text style={es.title}>Couldn't load messages</Text>
+      <Text style={es.subtitle}>Check your connection and try again</Text>
+      <TouchableOpacity onPress={onRetry} style={es.btn}>
         <Ionicons name="refresh" size={16} color="white" />
-        <Text className="text-white font-bold text-sm">Try Again</Text>
+        <Text style={es.btnText}>Try Again</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
+const es = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    padding: 32,
+  },
+  title: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  subtitle: { color: "#72767D", fontSize: 14, textAlign: "center" },
+  btn: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#5865F2",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 99,
+  },
+  btnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+});
+
+// ── Channel screen ────────────────────────────────────────────────────────────
 export default function Channel() {
-  const router = useRouter();
-  const params = useLocalSearchParams<{ channelId: string; channelName?: string }>();
+  const params = useLocalSearchParams<{
+    channelId: string;
+    name?: string;
+    communityId?: string;
+  }>();
 
-  const channelId = (Array.isArray(params.channelId) ? params.channelId[0] : params.channelId) ?? "";
-  const channelName = Array.isArray(params.channelName) ? params.channelName[0] : params.channelName;
+  const channelId =
+    (Array.isArray(params.channelId)
+      ? params.channelId[0]
+      : params.channelId) ?? "";
+  const channelName = Array.isArray(params.name)
+    ? params.name[0]
+    : params.name;
 
-  if (!channelId) {
-    return (
-      <View className="flex-1 items-center justify-center bg-[#313338]">
-        <Text className="text-white text-lg">Invalid channel</Text>
-      </View>
-    );
-  }
+  const isPublicFeed = channelName === "publicfeed";
 
-  console.debug(`${LOG_TAG} Rendering channel: ${channelId}`);
+  // ── Emoji sheet ─────────────────────────────────────────────────────────
+  const emojiSheetRef = useRef<BottomSheetModal>(null);
+  const emojiOpen = useRef(false);
 
-  const { data, isLoading, isError, refetch, isFetching } = useGetMessagesQuery(
-    { channelId },
-    { skip: !channelId }
-  );
+  // ── Attachment tray ─────────────────────────────────────────────────────
+  const [trayVisible, setTrayVisible] = useState(false);
 
+  // ── Back handler ────────────────────────────────────────────────────────
+  useBackHandler(() => {
+    if (trayVisible) {
+      setTrayVisible(false);
+      return true;
+    }
+    if (emojiOpen.current) {
+      emojiSheetRef.current?.dismiss();
+      return true;
+    }
+    return false;
+  });
+
+  // ── Message state + upload hook ─────────────────────────────────────────
+  const [message, setMessage] = useState("");
+  const {
+    attachments,
+    addAttachments,
+    removeAttachment,
+    clearAttachments,
+    isUploading,
+  } = useAttachmentUpload(channelId);
+
+  const canSend =
+    (message.trim().length > 0 || attachments.length > 0) && !isUploading;
+  const sendDisabled = isUploading;
+
+  // ── RTK query — chat only (PostList owns feed fetching) ─────────────────
+  const {
+    data: chatData,
+    isLoading: chatLoading,
+    isError: chatError,
+    refetch: chatRefetch,
+    isFetching: chatFetching,
+  } = useGetMessagesQuery({ channelId }, { skip: !channelId || isPublicFeed });
+
+  // ── Mutations ───────────────────────────────────────────────────────────
   const [sendMessage] = useSendMessageMutation();
-  const [loadOlderMessages, { isLoading: isLoadingOlder }] = useLoadOlderMessagesMutation();
+  const [loadOlderMessages, { isLoading: isLoadingOlder }] =
+    useLoadOlderMessagesMutation();
 
+  // ── Load older chat messages ────────────────────────────────────────────
   const handleLoadOlder = useCallback(async () => {
-    const cursor = data?.nextCursor;
+    const cursor = chatData?.nextCursor;
     if (!cursor || isLoadingOlder) return;
-    console.debug(`${LOG_TAG} loadOlder cursor: ${cursor}`);
     try {
       await loadOlderMessages({ channelId, cursor });
     } catch (err) {
       console.error(`${LOG_TAG} loadOlder failed`, err);
     }
-  }, [channelId, data?.nextCursor, isLoadingOlder, loadOlderMessages]);
+  }, [channelId, chatData?.nextCursor, isLoadingOlder, loadOlderMessages]);
 
+  // ── Retry failed message ────────────────────────────────────────────────
   const handleRetry = useCallback(
     (clientId: string) => {
-      const msg = data?.messages.find((m) => m.clientId === clientId);
+      const msg = chatData?.messages.find((m) => m.clientId === clientId);
       if (!msg) return;
-      console.debug(`${LOG_TAG} Retrying clientId: ${clientId}`);
-      sendMessage({ channelId, content: msg.content });
+      sendMessage({
+        channelId,
+        content: msg.content,
+        attachmentUploadIds:
+          msg.attachments?.map((a: any) => a.uploadId) ?? [],
+      });
     },
-    [data, channelId, sendMessage]
+    [chatData, channelId, sendMessage]
   );
 
-  const handleSend = useCallback(
-    (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed) return;
-      sendMessage({ channelId, content: trimmed });
+  // ── Send message ────────────────────────────────────────────────────────
+  const handleSend = useCallback(() => {
+    const trimmed = message.trim();
+    if (!trimmed && attachments.length === 0) return;
+
+    const uploadedAttachments = attachments.filter(
+      (a) => a.status === "uploaded"
+    );
+    const hasFailedOnly =
+      attachments.length > 0 &&
+      uploadedAttachments.length === 0 &&
+      !trimmed;
+
+    if (hasFailedOnly) {
+      Alert.alert(
+        "Upload failed",
+        "Please remove failed attachments or try uploading again."
+      );
+      return;
+    }
+
+    sendMessage({
+      channelId,
+      content: trimmed,
+      attachmentUploadIds: uploadedAttachments.map((a) => a.uploadId!),
+    });
+
+    setMessage("");
+    clearAttachments();
+  }, [message, attachments, channelId, sendMessage, clearAttachments]);
+
+  // ── Build LocalAttachment ───────────────────────────────────────────────
+  const buildAttachment = useCallback(
+    (
+      uri: string,
+      fileName: string,
+      mimeType: string,
+      fileSize: number,
+      thumbUri?: string
+    ): LocalAttachment | null => {
+      const error = validateAttachment(mimeType, fileSize, attachments.length);
+      if (error) {
+        Alert.alert("Can't add file", error);
+        return null;
+      }
+      const category = getCategoryFromMime(mimeType);
+      if (!category) return null;
+      return {
+        localId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        uri,
+        fileName: fileName || "file",
+        mimeType,
+        fileSize,
+        category,
+        thumbUri,
+        status: "pending",
+        progress: 0,
+      };
     },
-    [channelId, sendMessage]
+    [attachments.length]
   );
 
-  return (
-    <SafeAreaView className="flex-1 bg-[#313338]" edges={["top", "left", "right"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#313338" />
+  // ── UI handlers ─────────────────────────────────────────────────────────
+  const handlePlusPress = useCallback(() => {
+    if (emojiOpen.current) emojiSheetRef.current?.dismiss();
+    setTrayVisible((v) => !v);
+  }, []);
 
-      
-      <View className="flex-row items-center px-2 py-3 border-b border-[#3F4147] bg-black">
-        <Pressable
-          onPress={() => router.back()}
-          className="p-1 mr-1"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
-        </Pressable>
+  const handleEmojiPress = useCallback(() => {
+    setTrayVisible(false);
+    Keyboard.dismiss();
+    setTimeout(() => emojiSheetRef.current?.present(), 50);
+  }, []);
 
-        <View className=" flex-row ">
-          <Text className="text-white text-3xl font-bold  gap-2">#</Text>
-        
+  const handleInputFocus = useCallback(() => {
+    setTrayVisible(false);
+    if (emojiOpen.current) emojiSheetRef.current?.dismiss();
+  }, []);
 
-        <Text className="flex-1 text-white text-2xl  font-bold" numberOfLines={1}>
-          {channelName ?? `channel-${channelName}`}
-        </Text>
-</View>
-        <Pressable className="p-1" accessibilityLabel="Channel info">
-          <Ionicons name="people-outline" size={22} color="#B5BAC1" />
-        </Pressable>
-        <Pressable className="p-1 ml-1" accessibilityLabel="Search">
-          <Ionicons name="search-outline" size={22} color="#B5BAC1" />
-        </Pressable>
+  // ── Pick media ──────────────────────────────────────────────────────────
+  const handlePickMedia = useCallback(async () => {
+    setTrayVisible(false);
+    const remaining = LIMITS.maxFiles - attachments.length;
+    if (remaining <= 0) {
+      Alert.alert("Limit reached", `Max ${LIMITS.maxFiles} files`);
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.85,
+      exif: false,
+    });
+    if (result.canceled) return;
+
+    const items: LocalAttachment[] = [];
+    for (const asset of result.assets) {
+      const mime =
+        asset.mimeType ??
+        (asset.type === "video" ? "video/mp4" : "image/jpeg");
+      const item = buildAttachment(
+        asset.uri,
+        asset.fileName ?? "media",
+        mime,
+        asset.fileSize ?? 0,
+        asset.uri
+      );
+      if (item) items.push(item);
+    }
+    if (items.length) addAttachments(items);
+  }, [attachments.length, buildAttachment, addAttachments]);
+
+  const handlePickDocument = useCallback(async () => {
+    setTrayVisible(false);
+    const remaining = LIMITS.maxFiles - attachments.length;
+    if (remaining <= 0) {
+      Alert.alert("Limit reached", `Max ${LIMITS.maxFiles} files`);
+      return;
+    }
+    const result = await DocumentPicker.getDocumentAsync({
+      multiple: true,
+      copyToCacheDirectory: true,
+    });
+    if (result.canceled) return;
+
+    const items: LocalAttachment[] = [];
+    for (const asset of result.assets) {
+      const item = buildAttachment(
+        asset.uri,
+        asset.name,
+        asset.mimeType ?? "application/octet-stream",
+        asset.size ?? 0
+      );
+      if (item) items.push(item);
+    }
+    if (items.length) addAttachments(items);
+  }, [attachments.length, buildAttachment, addAttachments]);
+
+  // ── Guard ────────────────────────────────────────────────────────────────
+  if (!channelId) {
+    return (
+      <View style={styles.invalidChannel}>
+        <Text style={styles.invalidChannelText}>Invalid channel</Text>
       </View>
+    );
+  }
 
-    
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
-      >
-        {isLoading ? (
+  // ── Render ───────────────────────────────────────────────────────────────
+  return (
+    <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
+      <StatusBar barStyle="light-content" />
+      <ChannelHeader name={channelName} online={1} />
+
+      <View style={styles.body}>
+        {isPublicFeed ? (
+          // PostList owns its own data fetching + pagination
+          <PostList channelId={channelId} />
+        ) : chatLoading ? (
           <LoadingSkeleton />
-        ) : isError ? (
-          <ErrorState onRetry={refetch} />
+        ) : chatError ? (
+          <ErrorState onRetry={chatRefetch} />
         ) : (
           <MessageList
-            messages={data?.messages ?? []}
+            messages={chatData?.messages ?? []}
             loadOlder={handleLoadOlder}
-            isLoadingOlder={isLoadingOlder || (isFetching && !isLoading)}
-       
+            isLoadingOlder={isLoadingOlder || (chatFetching && !chatLoading)}
             onRetry={handleRetry}
           />
         )}
+        {!isPublicFeed && (
+          <TypingIndicator users={(chatData as any)?.typingUsers} />
+        )}
+      </View>
 
-        <TypingIndicator users={(data as any)?.typingUsers} />
-        <TextInputModal onSend={handleSend} />
-      </KeyboardAvoidingView>
+      <View>
+        <AttachmentTray
+          visible={trayVisible}
+          onPickMedia={handlePickMedia}
+          onPickDocument={handlePickDocument}
+          onCamera={() => {
+            setTrayVisible(false);
+            Alert.alert("Camera", "Coming soon!");
+          }}
+          onDismiss={() => setTrayVisible(false)}
+        />
+
+        {isPublicFeed ? (
+          <PublicFeedInputModal
+            channelId={params.channelId}
+            communityId={params?.communityId}
+          />
+        ) : (
+          <TextInputModal
+            message={message}
+            onChangeMessage={setMessage}
+            onSend={handleSend}
+            onPlusPress={handlePlusPress}
+            onEmojiPress={handleEmojiPress}
+            onInputFocus={handleInputFocus}
+            attachments={attachments}
+            onRemoveAttachment={removeAttachment}
+            isUploading={isUploading}
+            canSend={canSend}
+            sendDisabled={sendDisabled}
+            channelName={channelName}
+          />
+        )}
+      </View>
+
+      <EmojiPicker
+        ref={emojiSheetRef}
+        onSelect={(emoji) => setMessage((p) => p + emoji)}
+        onChange={(index) => {
+          emojiOpen.current = index !== -1;
+        }}
+      />
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  body: { flex: 1 },
+  invalidChannel: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#313338",
+  },
+  invalidChannelText: { color: "#fff", fontSize: 18 },
+});

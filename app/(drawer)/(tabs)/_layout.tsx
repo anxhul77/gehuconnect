@@ -10,7 +10,7 @@ import Feather from '@expo/vector-icons/Feather';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { Image } from 'expo-image';
+
 
 import AcadmicsHeader from '@/app/components/acadmecis/AcadmecisHeader';
 import ApplicationHeader  from '@/app/components/ApplicationHeader';
@@ -33,7 +33,7 @@ export default function _Layout(){
     
         
           tabBarShowLabel: true,
-          tabBarActiveTintColor: '#FF6B35',
+          tabBarActiveTintColor: '#EF5B3B',
           tabBarInactiveTintColor: '#999',
           tabBarItemStyle: {
             width: "100%",

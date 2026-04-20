@@ -21,7 +21,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
 }) => {
   const router=useRouter();
    function handleCommunnityPress(){
-    router.push("/(drawer)/(tabs)/communities/[communityId]")
+    router.push("/(drawer)/(tabs)/communities/profile/[communityProfileId]")
   }
   return (
     <Pressable onPress={()=> handleCommunnityPress()}

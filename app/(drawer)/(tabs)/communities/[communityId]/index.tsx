@@ -34,7 +34,7 @@ export default function Index() {
     
   );
 
-  console.log(Community)
+
  
   return (
     <SafeAreaView className="flex-1 flex-row bg-black">
@@ -52,7 +52,7 @@ export default function Index() {
       <View className="flex-1 border bg-zinc-800/50 rounded-tl-3xl h-screen overflow-hidden">
    
        <CommunityHeadBar name={Community?.communityName}></CommunityHeadBar>
-        <FlatList data={Community?.channelCategories} renderItem={(item)=> <ChannelCategory items={item} ></ChannelCategory>}></FlatList>
+        <FlatList data={Community?.channelCategories} renderItem={(item)=> <ChannelCategory items={item} communityId={Community?.id} ></ChannelCategory>}></FlatList>
       </View>
     </SafeAreaView>
   );

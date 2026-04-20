@@ -10,10 +10,10 @@ import { useRouter } from 'expo-router'
 const index = () => {
   const router=useRouter();
  const onGooglePress=()=>{
-     router.push("/(auth)/RegisterForm")
+     router.push("/(auth)/registerform")
  }
  const redirecttabs=()=>{
-    router.push("/(drawer)/(tabs)")
+    router.push("/(auth)/loginScreen")
  }
 function handleLoginEmail(){
   router.push("/(auth)/login")
@@ -21,7 +21,7 @@ function handleLoginEmail(){
   return (
     <View  className='bg-black flex-1 items-center pt-16'>
      <View className=''>
-      <Image   source={require("../../assets/images/logoremovedbg.png")}
+      <Image   source={require("../../assets/images/geuconnectlogotransparent.png")}
         contentFit="cover"
         transition={200}
         style={{

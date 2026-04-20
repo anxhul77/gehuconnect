@@ -1,12 +1,13 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { DrawerActions } from "@react-navigation/native";
 import { Image } from "expo-image";
-import { useNavigation } from "expo-router";
+import { useNavigation, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
  function ApplicationHeader() {
   const navigation = useNavigation();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const handleMenuClick=()=>{
     console.log("clickef")
@@ -44,17 +45,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
               <MaterialIcons name="menu" size={26} color="#999" />
             </View>
           </Pressable>
-         <View style={{display:'flex',flexDirection:"row",justifyContent:"center",alignItems:"center",width:120,height:80,marginLeft:10}}>
+         <View style={{display:'flex',flexDirection:"row",justifyContent:"center",alignItems:"center",width:110,height:50,marginLeft:10}}>
           <Image
-            source={require("../../assets/images/logoremovedbg.png")}
+            source={require("../../assets/images/geuconnectlogotransparent.png")}
             style={{flex:1, width:"100%", height:'100%',marginBottom:7,}}
             contentFit="cover"
             contentPosition={'center'}
           />
-          <View className='flex justify-center mt-3'>
-          <Text className="text-md text-[#FF6B35] font-bold absolute mb-8 mr-7">GEU</Text>
-            <Text  className="text-md text-[#ed5118] font-bold ml-2">CONNECT</Text>
-            </View>
+         
           </View>
         </View>
 
@@ -72,7 +70,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
             </View>
           </Pressable>
 
-          <Pressable style={{ marginHorizontal: 6 }}>
+          <Pressable style={{ marginHorizontal: 6 }} onPress={() => router.push('/profile')}>
             <View style={styles.iconBox}>
               <Ionicons name="person-outline" size={24} color="#999" />
             </View>

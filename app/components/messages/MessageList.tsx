@@ -1,156 +1,168 @@
-// ─────────────────────────────────────────────
-//  MessageList.tsx
-//  Fixes:
-//   1. Full TypeScript types
-//   2. Empty state
-//   3. Pagination footer loader
-//   4. onRetry wired through
-//   5. Spotify dark styling
-// ─────────────────────────────────────────────
-
-import React, { useCallback, useRef } from "react";
-import {
-  FlatList,
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  ListRenderItem,
-} from "react-native";
+import React, {
+  useCallback,
+  useRef,
+  useEffect,
+  memo,
+  forwardRef,
+} from "react";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import { Message } from "@/src/features/chat/chat.types";
 import MessageBubble from "./MessageBubble";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 const LOAD_OLDER_DEBOUNCE_MS = 800;
 
 const COLORS = {
-  bg: "#121212",
   textMuted: "#535353",
-  accent: "#1DB954",
+  accent: "#5865F2",
 };
 
 interface Props {
   messages: Message[];
   loadOlder: () => void;
   isLoadingOlder?: boolean;
-  onRetry?: (clientId: string) => void;
+  onRetry?: (id: string) => void;
 }
 
-function EmptyChat() {
-  return (
-    <View style={styles.empty}>
-      <Text style={styles.emptyIcon}>💬</Text>
-      <Text style={styles.emptyText}>No messages yet</Text>
-      <Text style={styles.emptySubtext}>Be the first to say something</Text>
-    </View>
-  );
-}
+const EmptyChat = memo(() => (
+  <View style={styles.empty}>
+    <Text style={styles.emptyIcon}>💬</Text>
+    <Text style={styles.emptyText}>No messages yet</Text>
+    <Text style={styles.emptySubtext}>Be the first to say something</Text>
+  </View>
+));
 
-function OlderMessagesLoader() {
-  return (
-    <View style={styles.loaderRow}>
-      <ActivityIndicator size="small" color={COLORS.accent} />
-    </View>
-  );
-}
+const Loader = memo(() => (
+  <View style={styles.loaderRow}>
+    <ActivityIndicator size="small" color={COLORS.accent} />
+  </View>
+));
 
-export default function MessageList({ messages, loadOlder, isLoadingOlder = false, onRetry }: Props) {
-  const ref = useRef<FlatList<Message>>(null);
+// Memoised so FlashList doesn't re-render the scroll component on every render
+const KeyboardScrollComponent = memo(
+  forwardRef<any, any>((props, ref) => (
+    <KeyboardAwareScrollView {...props} ref={ref} />
+  ))
+);
 
+export default function MessageList({
+  messages,
+  loadOlder,
+  isLoadingOlder = false,
+  onRetry,
+}: Props) {
+  const listRef = useRef<any>(null);
+  const lastLoadRef = useRef(0);
+  const isLoadingRef = useRef(false);
+  const prevCountRef = useRef(messages.length);
 
-  const lastLoadTimeRef = useRef<number>(0);
-  const isLoadingOlderRef = useRef(isLoadingOlder);
+  // Keep ref in sync so handleEnd closure is always current
+  isLoadingRef.current = isLoadingOlder;
 
-  isLoadingOlderRef.current = isLoadingOlder;
-
-
-  const handleEndReached = useCallback(() => {
-    if (isLoadingOlderRef.current) {
-      console.debug("[MessageList] onEndReached skipped — already loading");
-      return;
+  // Auto-scroll to bottom when a new message arrives (not when older load)
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (messages.length > prevCountRef.current) {
+      // Inverted list — index 0 is visually the bottom
+      try {
+        listRef.current?.scrollToIndex({ index: 0, animated: true });
+      } catch {
+        // scrollToIndex can throw if list isn't ready yet — safe to ignore
+      }
     }
+    prevCountRef.current = messages.length;
+  }, [messages.length]);
+
+  // Debounced pagination — fires when user reaches the visual top (= list end in inverted)
+  const handleEnd = useCallback(() => {
+    if (isLoadingRef.current) return;
     const now = Date.now();
-    const elapsed = now - lastLoadTimeRef.current;
-    if (elapsed < LOAD_OLDER_DEBOUNCE_MS) {
-      console.debug(`[MessageList] onEndReached debounced — ${elapsed}ms since last call`);
-      return;
-    }
-    lastLoadTimeRef.current = now;
-    console.debug("[MessageList] onEndReached — loading older messages");
+    if (now - lastLoadRef.current < LOAD_OLDER_DEBOUNCE_MS) return;
+    lastLoadRef.current = now;
     loadOlder();
-  
-  }, [loadOlder]); 
-
+  }, [loadOlder]);
 
   const renderItem = useCallback<ListRenderItem<Message>>(
-    ({ item, index }) => (
+    ({ item }) => (
       <MessageBubble
         item={item}
-        
-        previous={messages[index + 1]}
+        isGrouped={item.isGrouped}
         onRetry={onRetry}
       />
     ),
-    [messages, onRetry]
+    [onRetry]
   );
 
   const keyExtractor = useCallback(
-    (item: Message) => item.clientId ?? item.messageId?.toString() ?? `fallback-${item.createdAt}`,
+    (item: Message) => item.clientId,
+    []
+  );
+
+  const getItemType = useCallback(
+    (item: Message) => item.layoutType ?? "default",
+    []
+  );
+
+  const overrideLayout = useCallback(
+    (layout: { size: number }, item: Message) => {
+      switch (item.layoutType) {
+        case "textSmall":  layout.size = 54;  break;
+        case "textMedium": layout.size = 80;  break;
+        case "textLarge":  layout.size = 115; break;
+        case "system":     layout.size = 42;  break;
+        default:           layout.size = 72;
+      }
+      // Grouped messages are shorter (no header row)
+      if (item.isGrouped) layout.size = Math.max(layout.size - 14, 32);
+      // Messages with attachments need more space
+      if (item.attachments && item.attachments.length > 0) {
+        layout.size = item.attachments.length === 1 ? 300 : 320;
+      }
+    },
     []
   );
 
   return (
-    <FlatList
-      ref={ref}
+    <FlashList
+      ref={listRef}
       data={messages}
-      
       renderItem={renderItem}
+      inverted
       keyExtractor={keyExtractor}
-      
-      initialNumToRender={25}
-      maxToRenderPerBatch={20}
-      windowSize={10}
-      removeClippedSubviews
-      
-      onEndReached={handleEndReached}
-   
-      onEndReachedThreshold={0.1}
-      
-      ListFooterComponent={isLoadingOlder ? <OlderMessagesLoader /> : null}
-  
+      getItemType={getItemType}
+      overrideItemLayout={overrideLayout}
+      estimatedItemSize={72}
+      drawDistance={400}
+      onEndReached={handleEnd}
+      onEndReachedThreshold={0.25}
+      // In an inverted list, footer = visual top = older messages loader
+      ListFooterComponent={isLoadingOlder ? <Loader /> : null}
       ListEmptyComponent={<EmptyChat />}
-
-      keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={messages.length === 0 ? styles.emptyContainer : styles.content}
-      style={styles.list}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={styles.content}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  list: {
-    flex: 1,
-    backgroundColor: COLORS.bg,
-  },
   content: {
     paddingVertical: 8,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   loaderRow: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: "center",
   },
   empty: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
+    paddingTop: 80,
   },
   emptyIcon: {
     fontSize: 40,
-    marginBottom: 4,
   },
   emptyText: {
     color: "#fff",

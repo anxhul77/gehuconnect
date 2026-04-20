@@ -1,45 +1,19 @@
 import { api } from "../store/api";
-import { FeedPost } from "../types/types";
+import { CommunityPostsRes, FeedType } from "../types/types";
+
 
 export const feedApi=api.injectEndpoints({
   endpoints:(builder)=>({
   getFeedPosts: builder.query<
-  { posts: FeedPost[]; nextCursor?: string },
-  { cursor?: string }
+  {post:CommunityPostsRes},
+  { feedtype:FeedType;cursor:string;keyword:string;courseId:string;limit:string }
 >({
-  query: ({ cursor }) => ({
-    url: "/getGlobalFeed",
+  query: ({ feedtype,cursor,keyword,courseId,limit }) => ({
+    url: "feed/getFeed",
     method: "GET",
-    params: cursor ? { cursor } : undefined,
+    params:{feedType:feedtype,cursor,keyword,courseId,limit}
   }),
 
-  serializeQueryArgs: ({ endpointName }) => endpointName,
-
-  merge: (currentCache, newData) => {
-    const existingIds = new Set(currentCache.posts.map(p => p.id));
-
-    const uniquePosts = newData.posts.filter(
-      p => !existingIds.has(p.id)
-    );
-
-    currentCache.posts.push(...uniquePosts);
-    currentCache.nextCursor = newData.nextCursor;
-  },
-
-  forceRefetch({ currentArg, previousArg }) {
-    return currentArg?.cursor !== previousArg?.cursor;
-  },
-
-  providesTags: result =>
-    result
-      ? [
-          ...result.posts.map(({ id }) => ({
-            type: "Post" as const,
-            id,
-          })),
-          { type: "Post", id: "LIST" },
-        ]
-      : [{ type: "Post", id: "LIST" }],
 }),
 createPost: builder.mutation({
   query: body => ({
