@@ -54,9 +54,32 @@ export const computeMessageUI = (
     createdAtMs,
     formattedTime,
     formattedDate,
-    isGrouped: false, // applyGrouping() sets the real value
+    isGrouped: false,
     layoutType: resolveLayoutType(messageType, content),
   };
+};
+
+export const formatChatListTime = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (isToday) {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+  } else if (isYesterday) {
+    return "Yesterday";
+  } else {
+    return date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    });
+  }
 };
 
 /**

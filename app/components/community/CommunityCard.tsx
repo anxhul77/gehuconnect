@@ -5,30 +5,45 @@ import React from "react";
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface CommunityCardProps {
+  id: number;
   name: string;
   category: string;
   memberCount: string;
   imageUrl?: string;
   isJoined?: boolean;
+  tags?: string[];
+  isGrid?: boolean;
 }
 
 const CommunityCard: React.FC<CommunityCardProps> = ({
+  id,
   name,
   category,
   memberCount,
   imageUrl,
   isJoined,
+  tags,
+  isGrid,
 }) => {
-  const router=useRouter();
-   function handleCommunnityPress(){
-    router.push("/(drawer)/(tabs)/communities/profile/[communityProfileId]")
+  const router = useRouter();
+  function handleCommunnityPress() {
+    router.push({
+      pathname: "/(drawer)/(tabs)/communities/profile/[communityProfileId]",
+      params: {
+        communityProfileId: id.toString(),
+        name,
+        avatar: imageUrl,
+        isJoined: isJoined ? "true" : "false",
+        tags: tags
+      },
+    });
   }
   return (
-    <Pressable onPress={()=> handleCommunnityPress()}
-      style={styles.cardContainer}
-      className="mr-4 border border-white/5 overflow-hidden"
+    <Pressable onPress={() => handleCommunnityPress()}
+      style={[styles.cardContainer, isGrid && { width: '48.5%' }]}
+      className={`border border-white/5 overflow-hidden ${isGrid ? '' : 'mr-4'}`}
     >
-    
+
       <View style={StyleSheet.absoluteFill}>
         {imageUrl ? (
           <>
@@ -79,8 +94,8 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    width: 140, 
-    height: 160, 
+    width: 140,
+    height: 160,
     borderRadius: 20,
     backgroundColor: "#1E1E22",
   },

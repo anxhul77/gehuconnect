@@ -17,11 +17,11 @@ const C = {
 }
 
 const MENU_ITEMS = [
-  { icon: 'bookmark-outline', label: 'Saved Items',   route: 'components/marketplace/SavedItems'           },
-  { icon: 'receipt-outline',  label: 'List Items',    route: '/components/marketplace/AddItem'   },  
-  { icon: 'storefront-outline',label: 'My Listings',  route:  '/components/marketplace/MyListings'         },
-  { icon: 'settings-outline', label: 'Settings',      route: '/components/Settings'           },
-  { icon: 'help-circle-outline',label: 'Help & Support', route: '/components/HelpSupport'        },
+  { icon: 'bookmark-outline', label: 'Saved Items', route: 'components/marketplace/SavedItems' },
+  { icon: 'receipt-outline', label: 'List Items', route: '/components/marketplace/AddItem' },
+  { icon: 'storefront-outline', label: 'My Listings', route: '/components/marketplace/MyListings' },
+  { icon: 'pricetag', label: 'Offers', route: '/components/marketplace/OfferPage' },
+  { icon: 'help-circle-outline', label: 'Help & Support', route: '/components/HelpSupport' },
 ]
 
 export default function CampusCommerceHeader({ headerHeight }: any) {
@@ -32,7 +32,7 @@ export default function CampusCommerceHeader({ headerHeight }: any) {
 
   const handleMenuPress = (route: string | null) => {
     setMenuVisible(false)
-    console.log("router",route)
+
     if (route) router.push(route as any)
   }
 
@@ -111,7 +111,6 @@ export default function CampusCommerceHeader({ headerHeight }: any) {
               backgroundColor: 'black',
               borderRadius: 16,
               borderWidth: 1,
-              borderColor: C.border,
               paddingVertical: 6,
               minWidth: 200,
               shadowColor: '#000',

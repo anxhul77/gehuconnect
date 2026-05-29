@@ -1,9 +1,10 @@
 import { View, Text, Pressable } from "react-native";
 import React from "react";
-import { EvilIcons, Ionicons } from "@expo/vector-icons";
+import { Entypo, EvilIcons, Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Video, ResizeMode } from "expo-av";
 import { useRouter } from "expo-router";
+import { useReactToPostMutation } from "@/src/features/feed.api";
 
 const ALLOWED_VIDEO_TYPES = new Set([
   "video/mp4",
@@ -18,9 +19,27 @@ export default function Feedpostcard({ post }: { post: any }) {
   const isVideo =
     firstAttachment && ALLOWED_VIDEO_TYPES.has(firstAttachment.type);
 
+  const [reactToPost] = useReactToPostMutation();
+
+  const handleReaction = (type: "LIKE" | "DISLIKE") => {
+    if (!post?.postId) return;
+
+    let reactionType = type;
+    if (type === "LIKE" && post.liked) {
+      reactionType = "UNLIKE";
+    } else if (type === "DISLIKE" && post.disliked) {
+      reactionType = "UNDISLIKE";
+    }
+
+    reactToPost({
+      postId: post.postId,
+      postReactionType: reactionType as "LIKE" | "DISLIKE" | "UNLIKE" | "UNDISLIKE",
+    });
+  };
+
   return (
-    <View className="mx-4 my-3 rounded-2xl border border-white/15 bg-black overflow-hidden">
-  
+    <View className="  border border-b-white/15 bg-black overflow-hidden">
+
       <View className="flex-row items-center pl-2 pr-4 pt-3 pb-2">
         <View className="h-8 w-8 rounded-full bg-slate-700 items-center justify-center">
           <Ionicons name="person" size={16} color="white" />
@@ -33,9 +52,10 @@ export default function Feedpostcard({ post }: { post: any }) {
             Posted by u/{post?.author?.author} • 2h ago
           </Text>
         </View>
+        <Entypo name="dots-three-vertical" className="absolute right-4" size={18} color="white" />
       </View>
 
-    
+
       <Text className="text-white px-4 pt-1 text-base font-semibold">
         {post?.title}
       </Text>
@@ -49,7 +69,7 @@ export default function Feedpostcard({ post }: { post: any }) {
         </Text>
       )}
 
-  
+
       {firstAttachment && (
         <Pressable
           onPress={() =>
@@ -60,20 +80,21 @@ export default function Feedpostcard({ post }: { post: any }) {
           }
         >
           {isVideo ? (
-            <View style={{ width: "100%", aspectRatio: 12 / 9 }}>
+            <View style={{ width: "100%", aspectRatio: 9 / 9, paddingHorizontal: 12 }}>
               <Video
                 source={{ uri: firstAttachment.url }}
                 resizeMode={ResizeMode.COVER}
-                style={{ width: "100%", height: "100%" }}
+                style={{ width: "100%", height: "100%", borderRadius: 10, }}
                 isMuted
               />
-             
+
               <View
                 style={{
                   position: "absolute",
                   inset: 0,
                   alignItems: "center",
                   justifyContent: "center",
+
                   backgroundColor: "rgba(0,0,0,0.3)",
                 }}
               >
@@ -92,32 +113,50 @@ export default function Feedpostcard({ post }: { post: any }) {
               </View>
             </View>
           ) : (
-            <Image
-              source={{ uri: firstAttachment.url }}
-              contentFit="cover"
-              transition={200}
-              style={{ width: "100%", aspectRatio: 12 / 9 }}
-            />
+            <View style={{ width: "100%", paddingHorizontal: 10 }}>
+              <Image
+                source={{ uri: firstAttachment.url }}
+                contentFit="cover"
+                transition={200}
+                style={{ width: "100%", aspectRatio: 9 / 9, paddingHorizontal: 12, borderRadius: 10 }}
+              />
+            </View>
           )}
         </Pressable>
       )}
 
-      <View className="h-px bg-white/10 mx-4 my-2" />
 
-      <View className="flex-row items-center justify-between px-4 pb-4">
+
+      <View className="flex-row items-center justify-between px-4 pb-4 mt-4">
         <View className="flex-row items-center gap-4">
           <View className="flex-row items-center border border-white/15 bg-white/5 rounded-3xl p-1">
-            <EvilIcons name="like" size={24} color="rgba(255,255,255,0.60)" />
+            <Pressable
+              className="p-1"
+              onPress={() => handleReaction("LIKE")}
+            >
+              <EvilIcons
+                name="like"
+                size={24}
+                color={post?.liked ? "white" : "rgba(255,255,255,0.60)"}
+              />
+            </Pressable>
             <Text className="text-white/60 text-sm">
               {post?.statsDto?.likes ?? 0}
             </Text>
+
             <View className="w-px h-4 bg-white/10 ml-2" />
-            <EvilIcons
-              name="like"
-              size={24}
-              color="rgba(255,255,255,0.60)"
-              style={{ transform: [{ rotate: "180deg" }] }}
-            />
+
+            <Pressable
+              className="p-1 ml-1"
+              onPress={() => handleReaction("DISLIKE")}
+            >
+              <EvilIcons
+                name="like"
+                size={24}
+                color={post?.disliked ? "white" : "rgba(255,255,255,0.60)"}
+                style={{ transform: [{ rotate: "180deg" }] }}
+              />
+            </Pressable>
             <Text className="text-white/60 text-sm mr-1">
               {post?.statsDto?.dislikes ?? 0}
             </Text>

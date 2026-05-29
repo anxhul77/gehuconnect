@@ -38,13 +38,13 @@ export default function ListItemScreen() {
   const [isUrgent, setIsUrgent] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState('')
-  const [btnLoader,setBtnLoader]=useState<boolean>(false)
+  const [btnLoader, setBtnLoader] = useState<boolean>(false)
 
   const [hasDiscount, setHasDiscount] = useState(false)
   const [discountType, setDiscountType] = useState<'percentage' | 'flat'>('percentage')
   const [discountValue, setDiscountValue] = useState('')
 
-  
+
   const originalPrice = parseFloat(price) || 0
   const discountAmt = parseFloat(discountValue) || 0
   const discountedPrice =
@@ -67,12 +67,13 @@ export default function ListItemScreen() {
   const canPublish = completionScore === 6
   const progressPct = Math.round((completionScore / 6) * 100)
 
-  const { data: categories ,isLoading:categoryLoading,error:categoryError} = useGetCategoriesQuery()
-  const { data: productConditions,isLoading:productConditionsLoading,error:productConditionError } = useGetProductConditionsQuery()
+  const { data: categories, isLoading: categoryLoading, error: categoryError } = useGetCategoriesQuery()
+  const { data: productConditions, isLoading: productConditionsLoading, error: productConditionError } = useGetProductConditionsQuery()
   const [getPresigned] = useGetPresignedForProductsMutation()
-  const [addProduct]=useAddProductsMutation();
- 
- 
+  const [addProduct] = useAddProductsMutation();
+
+  console.log(isNegotiable)
+  console.log(isUrgent)
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -107,49 +108,51 @@ export default function ListItemScreen() {
         })
       )
       const presignedList = await getPresigned({ data: metadata }).unwrap()
-    
+
       await Promise.all(
-        presignedList.map((item, i) =>{
+        presignedList.map((item, i) => {
           uploadToR2(item.presignedUrl, images[i], metadata[i].mimeType)
-        
+
         }
         )
       )
-       const keys = presignedList.map(item => item.key)
-       console.log("keys",keys)
-     const createProductRequest: CreateProductRequest = {
-      productName: title,
-      quantity: 1,
-      description,
-      price: Number(price),
-      image: keys,
-      discount: discountAmt || 0,
-      status:ListingStatus.PUBLISHED,
-      isNegotitable: isNegotiable,
-      isUrgentSale: isUrgent,
-      tags,
-      productConditionId: Number(condition)
-    }
+      const keys = presignedList.map(item => item.key)
 
-    await addProduct({
-      createProductRequest,
-      categoryId: category
-    }).unwrap()
+      const createProductRequest: CreateProductRequest = {
+        productName: title,
+        quantity: 1,
+        description,
+        price: Number(price),
+        image: keys,
+        discount: discountAmt || 0,
+        status: ListingStatus.PUBLISHED,
+        isNegotitable: isNegotiable,
+        isUrgentSale: isUrgent,
+        tags,
+        productConditionId: Number(condition)
+      }
+
+      await addProduct({
+        createProductRequest,
+        categoryId: category
+      }).unwrap()
       Toast.show({
-        type:'success',
-        text1:"Item Added Succesfully",
-         position:"top",
-         visibilityTime:4000
+        type: 'success',
+        text1: "Item Added Succesfully",
+        position: "top",
+        visibilityTime: 4000
       })
       setBtnLoader(false)
       router.back()
     } catch (err) {
       console.log(err)
       Toast.show(
-        {type:"error",
-          text1:'Something went wrong',
-        position:"top",
-         visibilityTime:4000})
+        {
+          type: "error",
+          text1: 'Something went wrong',
+          position: "top",
+          visibilityTime: 4000
+        })
 
     }
     setBtnLoader(false)
@@ -161,7 +164,7 @@ export default function ListItemScreen() {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-      
+
         <View
           className="bg-[#0A0A0A] border-b border-[#2A2A2A] px-4 pb-[14px]"
           style={{ paddingTop: insets.top + 10 }}
@@ -184,9 +187,8 @@ export default function ListItemScreen() {
             <Pressable
               disabled={!canPublish}
               onPress={handlePublish}
-              className={`px-[18px] py-[9px] rounded-full flex-row items-center gap-1.5 ${
-                canPublish ? 'bg-[#1DB954]' : 'bg-[#242424]'
-              }`}
+              className={`px-[18px] py-[9px] rounded-full flex-row items-center gap-1.5 ${canPublish ? 'bg-[#1DB954]' : 'bg-[#242424]'
+                }`}
             >
               <Ionicons name="checkmark" size={15} color={canPublish ? '#000' : '#535353'} />
               <Text className={`font-extrabold text-[13px] ${canPublish ? 'text-black' : 'text-[#535353]'}`}>
@@ -208,7 +210,7 @@ export default function ListItemScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}
         >
-        
+
           <SectionLabel>Photos</SectionLabel>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-1">
             <Pressable
@@ -246,7 +248,7 @@ export default function ListItemScreen() {
             First photo becomes the cover · Up to 5 photos
           </Text>
 
-         
+
           <SectionLabel>Item Details</SectionLabel>
           <StyledInput
             label="Title"
@@ -265,18 +267,17 @@ export default function ListItemScreen() {
             maxLength={500}
           />
 
-        
+
           <SectionLabel>Category</SectionLabel>
           <View className="flex-row flex-wrap gap-2">
             {categories?.content.map((cat: any) => {
               const active = category === cat?.categoryId
-              return ( !categoryLoading ?
+              return (!categoryLoading ?
                 <Pressable
                   key={cat?.categoryId}
                   onPress={() => setCategory(cat?.categoryId)}
-                  className={`flex-row items-center px-3.5 py-[9px] rounded-3xl border gap-1.5 ${
-                    active ? 'bg-white white' : 'bg-[#1A1A1A] border-[#2A2A2A]'
-                  }`}
+                  className={`flex-row items-center px-3.5 py-[9px] rounded-3xl border gap-1.5 ${active ? 'bg-white white' : 'bg-[#1A1A1A] border-[#2A2A2A]'
+                    }`}
                 >
                   <MaterialCommunityIcons
                     name={cat.icon as any}
@@ -286,10 +287,10 @@ export default function ListItemScreen() {
                   <Text className={`font-bold text-[13px] ${active ? 'text-black' : 'text-[#B3B3B3]'}`}>
                     {cat?.categoryName}
                   </Text>
-                </Pressable>: <>
-                <View className='flex flex-row gap-2 mb-3 '>
-                {   [...Array(4)].map(()=>(<CategoryCardLoader>
-                    </CategoryCardLoader>)) } </View>
+                </Pressable> : <>
+                  <View className='flex flex-row gap-2 mb-3 '>
+                    {[...Array(4)].map((_, i) => (<CategoryCardLoader key={i}>
+                    </CategoryCardLoader>))} </View>
                 </>
               )
             })}
@@ -298,7 +299,7 @@ export default function ListItemScreen() {
           <View className="flex-row flex-wrap gap-2">
             {!productConditionsLoading ? productConditions?.map(cond => {
               const active = condition === cond.id
-             
+
               return (
                 <Pressable
                   key={cond.id}
@@ -307,7 +308,7 @@ export default function ListItemScreen() {
                     paddingHorizontal: 16,
                     paddingVertical: 9,
                     borderRadius: 24,
-                    backgroundColor: active ? "#CEFA05"  : '#1A1A1A',
+                    backgroundColor: active ? "#CEFA05" : '#1A1A1A',
                     borderWidth: 1.5,
                     borderColor: active ? "#CEFA05" : '#2A2A2A',
                   }}
@@ -317,11 +318,11 @@ export default function ListItemScreen() {
                   </Text>
                 </Pressable>
               )
-            }): <View className='flex flex-row gap-2 mb-3 '> {[...Array(4)].map(()=>(<CategoryCardLoader>
-                    </CategoryCardLoader>))} </View>}
+            }) : <View className='flex flex-row gap-2 mb-3 '> {[...Array(4)].map((_, i) => (<CategoryCardLoader key={i}>
+            </CategoryCardLoader>))} </View>}
           </View>
 
-        
+
           <SectionLabel>Pricing</SectionLabel>
           <StyledInput
             label="Price (₹)"
@@ -332,11 +333,11 @@ export default function ListItemScreen() {
             prefix="₹"
           />
 
-          
+
           <View className="gap-2.5">
             {[
-              { label: 'Open to negotiation', sub: 'Buyers can make offers', value: isNegotiable, set: setIsNegotiable, color: '#3B82F6',  },
-              { label: 'Urgent sale', sub: 'Highlighted in listings', value: isUrgent, set: setIsUrgent, color: '#3B82F6',  },
+              { label: 'Open to negotiation', sub: 'Buyers can make offers', value: isNegotiable, set: setIsNegotiable, color: '#3B82F6', },
+              { label: 'Urgent sale', sub: 'Highlighted in listings', value: isUrgent, set: setIsUrgent, color: '#3B82F6', },
             ].map(item => (
               <Pressable
                 key={item.label}
@@ -361,13 +362,13 @@ export default function ListItemScreen() {
             ))}
           </View>
 
-      
+
           <SectionLabel>Discount</SectionLabel>
 
           <Pressable
             onPress={() => { setHasDiscount(!hasDiscount); if (hasDiscount) setDiscountValue('') }}
             className="flex-row items-center bg-[#1A1A1A] rounded-2xl p-3.5 border"
-            style={{ borderColor : '#2A2A2A', marginBottom: hasDiscount ? 12 : 0 }}
+            style={{ borderColor: '#2A2A2A', marginBottom: hasDiscount ? 12 : 0 }}
           >
             <View className="flex-1">
               <Text className="text-white font-bold text-[14px]">Add a discount</Text>
@@ -399,9 +400,8 @@ export default function ListItemScreen() {
                       <Pressable
                         key={opt.id}
                         onPress={() => { setDiscountType(opt.id); setDiscountValue('') }}
-                        className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-3xl border-2 ${
-                          active ? 'bg-[#14B8A622] border-[#14B8A6]' : 'bg-[#242424] border-[#2A2A2A]'
-                        }`}
+                        className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-3xl border-2 ${active ? 'bg-[#14B8A622] border-[#14B8A6]' : 'bg-[#242424] border-[#2A2A2A]'
+                          }`}
                       >
                         <MaterialCommunityIcons
                           name={opt.icon as any}
@@ -417,7 +417,7 @@ export default function ListItemScreen() {
                 </View>
               </View>
 
-              
+
               <View>
                 <Text className="text-[#B3B3B3] text-[12px] font-semibold mb-2">
                   {discountType === 'percentage' ? 'Discount Percentage' : 'Discount Amount (₹)'}
@@ -445,7 +445,7 @@ export default function ListItemScreen() {
 
               {discountedPrice !== null && (
                 <View className="bg-[#14B8A611] rounded-xl border border-[#14B8A633] p-3">
-                
+
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-row items-center gap-1.5">
                       <MaterialCommunityIcons name="tag-outline" size={14} color="#14B8A6" />
@@ -473,7 +473,7 @@ export default function ListItemScreen() {
                       </Text>
                     </View>
 
-            
+
                     <View className="bg-[#14B8A622] rounded-2xl px-3.5 py-2.5 items-center border border-[#14B8A633]">
                       <Text className="text-[#535353] text-[10px] font-semibold mb-0.5">You save</Text>
                       <Text className="text-[#14B8A6] text-[20px] font-black leading-none">
@@ -486,7 +486,7 @@ export default function ListItemScreen() {
             </View>
           )}
 
-        
+
           <SectionLabel>Tags</SectionLabel>
           <View className="flex-row flex-wrap gap-2 mb-2.5">
             {tags.map(t => (
@@ -523,14 +523,13 @@ export default function ListItemScreen() {
             Tags help buyers discover your item · Up to 6 tags
           </Text>
 
-        
+
           <View className="mt-9 gap-2.5">
             <Pressable
               disabled={!(canPublish || btnLoader)}
               onPress={handlePublish}
-              className={`py-4 rounded-full flex-row items-center justify-center gap-2 ${
-                canPublish || btnLoader ? 'bg-[#1DB954]' : 'bg-[#242424]'
-              }`}
+              className={`py-4 rounded-full flex-row items-center justify-center gap-2 ${canPublish || btnLoader ? 'bg-[#1DB954]' : 'bg-[#242424]'
+                }`}
             >
               <Ionicons name="storefront-outline" size={18} color={canPublish ? '#000' : '#535353'} />
               <Text className={`font-black text-[16px] tracking-tight ${canPublish ? 'text-black' : 'text-[#535353]'}`}>
@@ -538,7 +537,7 @@ export default function ListItemScreen() {
               </Text>
             </Pressable>
 
-            <Pressable  disabled={!(canPublish || btnLoader)} className="py-3.5 rounded-full items-center border border-[#2A2A2A]">
+            <Pressable disabled={!(canPublish || btnLoader)} className="py-3.5 rounded-full items-center border border-[#2A2A2A]">
               <Text className="text-[#B3B3B3] font-bold text-[14px]">Save as Draft</Text>
             </Pressable>
           </View>

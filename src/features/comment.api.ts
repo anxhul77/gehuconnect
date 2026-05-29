@@ -58,7 +58,7 @@ export const commentApi = api.injectEndpoints({
                 method: "GET",
                 params: { parentId, cursor, limit },
             }),
-            // Keep cache specific to parentId
+
             serializeQueryArgs: ({ queryArgs }) => {
                 return { parentId: queryArgs.parentId };
             },
@@ -170,7 +170,7 @@ export const commentApi = api.injectEndpoints({
                         );
                     } else {
                         const numericParentId = Number(arg.parentCommentId);
-                        
+
                         // Push new reply into getReplies cache optimistically
                         patchResults.push(
                             dispatch(

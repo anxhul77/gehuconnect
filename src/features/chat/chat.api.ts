@@ -23,7 +23,7 @@ const PAGE_SIZE = 30;
 export const chatApi = api.injectEndpoints({
   endpoints: (builder) => ({
 
-    // ─── GET MESSAGES ──────────────────────────────
+
     getMessages: builder.query<MessagesResponse, { channelId: string }>({
       query: ({ channelId }) =>
         `/messages/getAllMessages/${channelId}?limit=${PAGE_SIZE}`,
@@ -70,7 +70,7 @@ export const chatApi = api.injectEndpoints({
         connectChatSocket(token);
 
         const unsubscribe = subscribeTopic(
-          `/topic/channel/${channelId}`,
+          `/user/topic/channel/${channelId}`,
           (stompMessage) => {
             try {
               const data: SocketIncomingMessage = JSON.parse(stompMessage.body);
@@ -87,16 +87,16 @@ export const chatApi = api.injectEndpoints({
                 const byClientId =
                   data.clientId != null
                     ? draft.messages.findIndex(
-                        (m) => m.clientId === String(data.clientId)
-                      )
+                      (m) => m.clientId === String(data.clientId)
+                    )
                     : -1;
 
                 // ── STEP 2: match by messageId ─────────────────────────────
                 const byMessageId =
                   data.messageId != null
                     ? draft.messages.findIndex(
-                        (m) => m.messageId === data.messageId
-                      )
+                      (m) => m.messageId === data.messageId
+                    )
                     : -1;
 
                 // ── STEP 3: match pending msg from same sender with same content ──
@@ -104,19 +104,19 @@ export const chatApi = api.injectEndpoints({
                 const byContent =
                   byClientId === -1 && byMessageId === -1
                     ? draft.messages.findIndex(
-                        (m) =>
-                          m.pending &&
-                          m.content === data.content &&
-                          String(m.senderId) === incomingSenderId
-                      )
+                      (m) =>
+                        m.pending &&
+                        m.content === data.content &&
+                        String(m.senderId) === incomingSenderId
+                    )
                     : -1;
 
                 const existingIndex =
                   byClientId !== -1
                     ? byClientId
                     : byMessageId !== -1
-                    ? byMessageId
-                    : byContent;
+                      ? byMessageId
+                      : byContent;
 
                 if (existingIndex !== -1) {
                   // Merge — keep our local clientId, update everything else
@@ -228,13 +228,13 @@ export const chatApi = api.injectEndpoints({
     // ─── SEND MESSAGE ──────────────────────────────
     sendMessage: builder.mutation<boolean, SendMessagePayload>({
       async onQueryStarted(
-        { channelId, content, messageType = "TEXT",attachmentUploadIds },
+        { channelId, content, messageType = "TEXT", attachmentUploadIds },
         { dispatch, getState }
       ) {
         const currentUserId = String(
           (getState() as any).auth?.userId ??
-            (getState() as any).auth?.user?.id ??
-            "me"
+          (getState() as any).auth?.user?.id ??
+          "me"
         );
         const clientId = `local-${Date.now()}-${Math.random()
           .toString(36)
@@ -276,7 +276,8 @@ export const chatApi = api.injectEndpoints({
         publishWhenReady(
           `/app/chat.send/${channelId}`,
           // ← clientId goes in the payload so Spring can echo it back
-          JSON.stringify({ content, clientId, attachmentUploadIds,messageType }),
+          
+          JSON.stringify({ content, clientId, attachmentUploadIds, messageType }),
           () => {
             console.debug(`${LOG_TAG} publish ✓ ${clientId}`);
           },
@@ -287,7 +288,7 @@ export const chatApi = api.injectEndpoints({
                 "getMessages",
                 { channelId },
                 (draft) => {
-               
+
                   const msg = draft.messages.find(
                     (m) => m.clientId === clientId
                   );

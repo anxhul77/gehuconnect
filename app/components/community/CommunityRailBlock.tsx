@@ -10,10 +10,8 @@ export default function CommunityRailBlock({community}:any) {
   console.log("rendered")
    function handleOnPress(){
     console.log("licked")
-    router.replace(
-      `/communities/${communityId}/channels/${channelId}`,
-
-    
+    router.push(
+      `/communities/${communityId}/channels/${channelId}`
     )
    }      
   return (

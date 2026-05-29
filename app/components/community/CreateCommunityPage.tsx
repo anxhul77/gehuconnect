@@ -14,9 +14,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import { uploadToR2 } from '@/src/utils/UploadToR2';
 import { useGetPresignedForProductsMutation } from '@/src/features/media.api';
+import { useCreateCommunityMutation } from '@/src/features/community.api';
+import Toast from 'react-native-toast-message';
 
 export default function CreateCommunityPage() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function CreateCommunityPage() {
   const [btnLoader, setBtnLoader] = useState<boolean>(false);
 
   const [getPresigned] = useGetPresignedForProductsMutation();
+  const [createCommunity] = useCreateCommunityMutation();
 
   const completionScore = [
     avatarUrl !== null,
@@ -80,38 +82,52 @@ export default function CreateCommunityPage() {
   const removeTag = (t: string) => setTags((prev) => prev.filter((x) => x !== t));
 
   const handlePublish = async () => {
-    if (!canPublish) return;
+    if (!canPublish || btnLoader) return;
     setBtnLoader(true);
     try {
+      // 1. Prepare image metadata
       const imagesToUpload = [avatarUrl, bannerUrl];
       const metadata = await Promise.all(
         imagesToUpload.map(async (uri) => {
-          const res = await fetch(uri!);
-          const blob = await res.blob();
-          return { mimeType: blob.type || 'image/jpeg', fileSize: blob.size };
+          try {
+            const res = await fetch(uri!);
+            const blob = await res.blob();
+            return { mimeType: blob.type || 'image/jpeg', fileSize: blob.size };
+          } catch (e) {
+            throw new Error(`Failed to process image: ${uri}`);
+          }
         })
       );
-      const presignedList = await getPresigned({ data: metadata }).unwrap();
 
+      // 2. Get presigned URLs
+      const presignedList = await getPresigned({ data: metadata }).unwrap();
+      if (!presignedList || presignedList.length < 2) {
+        throw new Error('Failed to get upload authorization');
+      }
+
+      // 3. Upload to R2
       await Promise.all(
-        presignedList.map((item, i) =>
-          uploadToR2(item.presignedUrl, imagesToUpload[i]!, metadata[i].mimeType)
-        )
+        presignedList.map(async (item, i) => {
+          try {
+            await uploadToR2(item.presignedUrl, imagesToUpload[i]!, metadata[i].mimeType);
+          } catch (e) {
+            throw new Error(`Failed to upload ${i === 0 ? 'avatar' : 'banner'} to storage`);
+          }
+        })
       );
 
       const keys = presignedList.map((item) => item.key);
       const uploadedAvatarKey = keys[0];
       const uploadedBannerKey = keys[1];
 
-      // Simulate API call
-      console.log('Simulating API call with:', {
-        name,
-        description,
-        avatarKey: uploadedAvatarKey,
-        bannerKey: uploadedBannerKey,
-        tags,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // 4. Hit backend API
+      await createCommunity({
+        name: name.trim(),
+        description: description.trim(),
+        profileAvatar: uploadedAvatarKey,
+        profileBanner: uploadedBannerKey,
+        tags: tags,
+      }).unwrap();
 
       Toast.show({
         type: 'success',
@@ -121,11 +137,11 @@ export default function CreateCommunityPage() {
       });
 
       router.back();
-    } catch (err) {
-      console.log(err);
+    } catch (err: any) {
+      console.error('Publish Error:', err);
       Toast.show({
         type: 'error',
-        text1: 'Something went wrong',
+        text1: err.message || 'Something went wrong while publishing',
         position: 'top',
         visibilityTime: 4000,
       });

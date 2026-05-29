@@ -3,12 +3,14 @@ import { TRENDING_RESOURCES } from "@/app/components/acadmecis/data";
 import SubjectCard from "@/app/components/acadmecis/SubjectCard";
 import SubjectLoader from "@/app/components/acadmecis/SubjectLoader";
 import TrendingResourceCard from "@/app/components/acadmecis/TrendingResources";
+import AcademicUploadForm from "@/app/components/acadmecis/AcademicUploadForm";
 import { useGetSubjectQuery } from "@/src/features/acadmecis.api";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Platform,
+  Pressable,
   ScrollView,
   Text,
   UIManager,
@@ -24,9 +26,11 @@ if (
 
 export default function Academics() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [selectedSubjectForUpload, setSelectedSubjectForUpload] = useState<{ id: number; name: string } | null>(null);
   const router = useRouter();
 
-  const { data: subjects ,isLoading:subjectLoading,error:subjectError} = useGetSubjectQuery("1");
+  const { data: subjects, isLoading: subjectLoading, error: subjectError } = useGetSubjectQuery("1");
 
   function handleSubjectCardPress() {
     router.push(`/components/acadmecis/[subjectId]`);
@@ -152,6 +156,37 @@ export default function Academics() {
           </View>
         )}
       </ScrollView>
+
+      {/* FAB Upload Button */}
+      <Pressable
+        onPress={() => {
+          const firstSubject = subjects?.[0];
+          if (firstSubject) {
+            setSelectedSubjectForUpload({ id: Number(firstSubject.subjectId), name: firstSubject.subjectName });
+          } else {
+            setSelectedSubjectForUpload({ id: 1, name: "General" });
+          }
+          setShowUploadForm(true);
+        }}
+        className="absolute bottom-20 right-5 bg-orange-500 w-14 h-14 rounded-full items-center justify-center"
+        style={{
+          elevation: 8,
+          shadowColor: "#FF6B35",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+        }}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </Pressable>
+
+      {/* Upload Form Modal */}
+      <AcademicUploadForm
+        visible={showUploadForm}
+        onClose={() => setShowUploadForm(false)}
+        subjectId={selectedSubjectForUpload?.id ?? 1}
+        subjectName={selectedSubjectForUpload?.name}
+      />
     </View>
   );
 }

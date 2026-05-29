@@ -7,37 +7,37 @@ import { useForm } from "react-hook-form";
 import { useLoginMutation } from "@/src/features/auth.api";
 
 const InputForm = () => {
- const router=useRouter();
- const[login,{isLoading,error,isSuccess},] =useLoginMutation();
+  const router = useRouter();
+  const [login, { isLoading, error, isSuccess },] = useLoginMutation();
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({
     defaultValues: {
-        mode: "onChange",
+      mode: "onChange",
       email: "",
       password: "",
     },
   });
 
   const onSubmit = async (data: any) => {
-    try{
-      
-           const payload={
-            "email":data.email,
-            "password":data.password
-           }
-               console.log("payload        ................................................................",payload)
-           await login(payload).unwrap()
-     if(isSuccess){
-      console.log(isSuccess)
-      router.push("/(drawer)/(tabs)")
-     }
+    try {
+
+      const payload = {
+        "email": data.email,
+        "password": data.password
+      }
+      console.log("payload        ................................................................", payload)
+      await login(payload).unwrap()
+      if (isSuccess) {
+        console.log(isSuccess)
+        router.push("/(drawer)/(tabs)/home")
+      }
     }
-     catch(error){
-          console.log(error)
-     }
+    catch (error) {
+      console.log(error)
+    }
   };
 
   return (
@@ -55,11 +55,11 @@ const InputForm = () => {
             value: 254,
             message: "Email is too long",
           },
-           pattern: {
-    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: "Enter a valid email address",
-  },
-          
+          pattern: {
+            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            message: "Enter a valid email address",
+          },
+
         }}
         error={errors.email?.message}
       />

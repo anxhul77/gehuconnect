@@ -63,7 +63,7 @@ export default function Marketplace() {
     [selectedCategory, debouncedSearch, sort]
   );
 
-  const { data: categories ,isLoading:categoryLoading} = useGetCategoriesQuery();
+  const { data: categories, isLoading: categoryLoading } = useGetCategoriesQuery();
 
   const { data: products, isLoading: productsLoading } =
     useGetProductsQuery(queryParams);
@@ -78,7 +78,7 @@ export default function Marketplace() {
 
       <Animated.FlatList
         as={FlashList}
-        data={productsLoading ? [...Array(6)] : products?.content}
+        data={productsLoading ? [...Array(6)] : products?.products}
         numColumns={2}
         columnWrapperStyle={{ gap: 12 }}
         keyExtractor={(item, index) =>
@@ -128,9 +128,9 @@ export default function Marketplace() {
                 style={{ marginHorizontal: 32, paddingHorizontal: 16 }}
               >
                 <View style={{ flexDirection: "row", gap: 8 }}>
-                 {!categoryLoading && <CategoryCard
+                  {!categoryLoading && <CategoryCard
                     item={{
-                      categoryId: "0",
+                      categoryId: null,
                       categoryName: "All",
                     }}
                     selectedCategory={selectedCategory}
@@ -144,8 +144,8 @@ export default function Marketplace() {
                       selectedCategory={selectedCategory}
                       setSelectedCategory={setSelectedCategory}
                     />
-                  )):<>
-                 {[...Array(3)].map(()=>(<CategoryCardLoader></CategoryCardLoader>))}
+                  )) : <>
+                    {[...Array(3)].map((_, idx) => (<CategoryCardLoader key={idx}></CategoryCardLoader>))}
                   </>}
                 </View>
               </ScrollView>

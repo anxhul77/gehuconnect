@@ -4,14 +4,14 @@ import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native'
 import OptionRow from './OptionRow'
 
 const ORDER_OPTIONS = [
-  { id: 'asc',  label: 'Ascending',  icon: '↑' },
+  { id: 'asc', label: 'Ascending', icon: '↑' },
   { id: 'desc', label: 'Descending', icon: '↓' },
 ]
 
 const SORTBY_OPTIONS = [
-  { id: 'price',  label: 'Price',  icon: '$' },
+  { id: 'price', label: 'Price', icon: '$' },
   { id: 'rating', label: 'Rating', icon: '★' },
-  { id: 'time',   label: 'Time',   icon: '⏱' },
+  { id: 'createdAt', label: 'Time', icon: '⏱' },
 ]
 
 const POPOVER_WIDTH = 180
@@ -40,13 +40,13 @@ export default function FilterCard({ sort, onSortChange }: Props) {
     btnRef.current?.measureInWindow((x, y, width, height) => {
       setPopoverPos({
         top: y + height + 8,
-        right: x  +POPOVER_WIDTH,
+        right: x + POPOVER_WIDTH,
       })
       setVisible(true)
     })
   }
 
- 
+
   const toggleOrder = (id: string) =>
     onSortChange({ ...sort, order: sort.order === id ? null : id })
 
@@ -57,7 +57,7 @@ export default function FilterCard({ sort, onSortChange }: Props) {
 
   return (
     <>
-    
+
       <View
         ref={btnRef}
         className=" h-10 w-10 absolute left-0 items-center justify-center"
@@ -74,7 +74,7 @@ export default function FilterCard({ sort, onSortChange }: Props) {
         </Pressable>
       </View>
 
-     
+
       <Modal
         visible={visible}
         transparent
@@ -98,7 +98,7 @@ export default function FilterCard({ sort, onSortChange }: Props) {
             }}
             className="bg-black border border-[#2A2A2A] rounded-2xl overflow-hidden"
           >
-            
+
             <View className="px-4 pt-3 pb-1.5">
               <Text className="text-[10px] font-semibold tracking-widest uppercase text-[#555]">
                 Order
@@ -118,7 +118,7 @@ export default function FilterCard({ sort, onSortChange }: Props) {
 
             <View className="h-px bg-[#2A2A2A]" />
 
-          
+
             <View className="px-4 pt-3 pb-1.5">
               <Text className="text-[10px] font-semibold tracking-widest uppercase text-[#555]">
                 Sort by

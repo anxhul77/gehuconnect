@@ -1,4 +1,4 @@
-import { AuthState, User } from '@/src/types/types';
+import { AuthState, User, ErpUserData } from '@/src/types/types';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 
@@ -25,8 +25,14 @@ const authSlice = createSlice({
       state.accessToken = null
       state.isAuthenticated = false
     },
+    setErpData(state, action: PayloadAction<ErpUserData>) {
+      if (state.user) {
+        state.user.isErpLoggedIn = true
+        state.user.erpData = action.payload
+      }
+    },
   },
 })
 
-export const { setCredentials, logout } = authSlice.actions
+export const { setCredentials, logout, setErpData } = authSlice.actions
 export default authSlice.reducer

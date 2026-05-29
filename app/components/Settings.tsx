@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
+
 const C = {
   bg: '#0A0A0A',
   surface1: '#141414',
@@ -80,7 +80,7 @@ function ToggleRow({ item, value, onToggle }: { item: SettingToggle; value: bool
   return (
     <View style={{
       flexDirection: 'row',
-      backgroundColor:"black",
+      backgroundColor: "black",
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 14,
@@ -103,7 +103,7 @@ function ToggleRow({ item, value, onToggle }: { item: SettingToggle; value: bool
       <Switch
         value={value}
         onValueChange={onToggle}
-       
+
         trackColor={{ false: C.surface3, true: "#3B82F6" + '88' }}
         thumbColor={value ? "#3B82F6" : C.muted}
         ios_backgroundColor={C.surface3}
@@ -118,7 +118,7 @@ function NavRow({ item, isLast }: { item: SettingNav; isLast: boolean }) {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor:"black",
+        backgroundColor: "black",
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderBottomWidth: isLast ? 0 : 1,
@@ -155,15 +155,15 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets()
 
   const [toggles, setToggles] = useState<Record<string, boolean>>({
-    push_messages:   true,
-    push_offers:     true,
+    push_messages: true,
+    push_offers: true,
     push_price_drop: false,
-    push_nearby:     false,
-    show_phone:      false,
-    show_hostel:     true,
-    dark_mode:       true,
-    compact_view:    false,
-    auto_relist:     false,
+    push_nearby: false,
+    show_phone: false,
+    show_hostel: true,
+    dark_mode: true,
+    compact_view: false,
+    auto_relist: false,
   })
 
   const toggle = (key: string) => setToggles(prev => ({ ...prev, [key]: !prev[key] }))
@@ -172,50 +172,50 @@ export default function SettingsScreen() {
     {
       title: 'Account',
       items: [
-        { kind: 'nav', icon: 'person-outline',    iconColor: C.blue,   label: 'Edit Profile',      sub: 'Name, photo, bio'            },
-        { kind: 'nav', icon: 'school-outline',     iconColor: C.purple, label: 'Student Verification', sub: 'Verified · Graphic Era'   },
-        { kind: 'nav', icon: 'call-outline',       iconColor: C.green,  label: 'Contact Number',    value: '+91 98765 XXXXX'           },
-        { kind: 'nav', icon: 'location-outline',   iconColor: C.orange, label: 'Hostel / Location', value: 'Block C'                  },
+        { kind: 'nav', icon: 'person-outline', iconColor: C.blue, label: 'Edit Profile', sub: 'Name, photo, bio' },
+        { kind: 'nav', icon: 'school-outline', iconColor: C.purple, label: 'Student Verification', sub: 'Verified · Graphic Era' },
+        { kind: 'nav', icon: 'call-outline', iconColor: C.green, label: 'Contact Number', value: '+91 98765 XXXXX' },
+        { kind: 'nav', icon: 'location-outline', iconColor: C.orange, label: 'Hostel / Location', value: 'Block C' },
       ],
     },
     {
       title: 'Notifications',
       items: [
-        { kind: 'toggle', icon: 'chatbubble-outline',  iconColor: C.blue,   label: 'New Messages',    sub: 'When a buyer messages you',        key: 'push_messages'   },
-        { kind: 'toggle', icon: 'pricetag-outline',    iconColor: C.green,  label: 'Offers',           sub: 'When someone makes an offer',     key: 'push_offers'     },
-        { kind: 'toggle', icon: 'trending-down-outline',iconColor: C.pink,  label: 'Price Drops',     sub: 'On your saved items',              key: 'push_price_drop' },
-        { kind: 'toggle', icon: 'navigate-outline',    iconColor: C.yellow, label: 'Nearby Listings', sub: 'Items posted near your hostel',    key: 'push_nearby'     },
+        { kind: 'toggle', icon: 'chatbubble-outline', iconColor: C.blue, label: 'New Messages', sub: 'When a buyer messages you', key: 'push_messages' },
+        { kind: 'toggle', icon: 'pricetag-outline', iconColor: C.green, label: 'Offers', sub: 'When someone makes an offer', key: 'push_offers' },
+        { kind: 'toggle', icon: 'trending-down-outline', iconColor: C.pink, label: 'Price Drops', sub: 'On your saved items', key: 'push_price_drop' },
+        { kind: 'toggle', icon: 'navigate-outline', iconColor: C.yellow, label: 'Nearby Listings', sub: 'Items posted near your hostel', key: 'push_nearby' },
       ],
     },
     {
       title: 'Privacy',
       items: [
-        { kind: 'toggle', icon: 'call-outline',        iconColor: C.blue,   label: 'Show Phone Number', sub: 'Visible to interested buyers',  key: 'show_phone'  },
-        { kind: 'toggle', icon: 'home-outline',        iconColor: C.purple, label: 'Show Hostel Block', sub: 'Helps buyers find you easily',  key: 'show_hostel' },
-        { kind: 'nav',    icon: 'eye-off-outline',     iconColor: C.muted,  label: 'Blocked Users',     sub: '0 users blocked'                                   },
+        { kind: 'toggle', icon: 'call-outline', iconColor: C.blue, label: 'Show Phone Number', sub: 'Visible to interested buyers', key: 'show_phone' },
+        { kind: 'toggle', icon: 'home-outline', iconColor: C.purple, label: 'Show Hostel Block', sub: 'Helps buyers find you easily', key: 'show_hostel' },
+        { kind: 'nav', icon: 'eye-off-outline', iconColor: C.muted, label: 'Blocked Users', sub: '0 users blocked' },
       ],
     },
     {
       title: 'Listings',
       items: [
-        { kind: 'toggle', icon: 'refresh-outline',     iconColor: C.orange, label: 'Auto Re-list',   sub: 'Re-post expired listings automatically', key: 'auto_relist'   },
-        { kind: 'nav',    icon: 'time-outline',        iconColor: C.blue,   label: 'Listing Duration', value: '30 days'                                              },
-        { kind: 'nav',    icon: 'wallet-outline',      iconColor: C.green,  label: 'Payment Methods', sub: 'UPI, Cash'                                               },
+        { kind: 'toggle', icon: 'refresh-outline', iconColor: C.orange, label: 'Auto Re-list', sub: 'Re-post expired listings automatically', key: 'auto_relist' },
+        { kind: 'nav', icon: 'time-outline', iconColor: C.blue, label: 'Listing Duration', value: '30 days' },
+        { kind: 'nav', icon: 'wallet-outline', iconColor: C.green, label: 'Payment Methods', sub: 'UPI, Cash' },
       ],
     },
     {
       title: 'Appearance',
       items: [
-        { kind: 'toggle', icon: 'moon-outline',        iconColor: C.purple, label: 'Dark Mode',      sub: 'Always on dark theme',           key: 'dark_mode'    },
-        { kind: 'toggle', icon: 'grid-outline',        iconColor: C.blue,   label: 'Compact View',   sub: 'Smaller listing cards',          key: 'compact_view' },
-        { kind: 'nav',    icon: 'language-outline',    iconColor: C.yellow, label: 'Language',        value: 'English'                                            },
+        { kind: 'toggle', icon: 'moon-outline', iconColor: C.purple, label: 'Dark Mode', sub: 'Always on dark theme', key: 'dark_mode' },
+        { kind: 'toggle', icon: 'grid-outline', iconColor: C.blue, label: 'Compact View', sub: 'Smaller listing cards', key: 'compact_view' },
+        { kind: 'nav', icon: 'language-outline', iconColor: C.yellow, label: 'Language', value: 'English' },
       ],
     },
     {
       title: 'Danger Zone',
       items: [
-        { kind: 'nav', icon: 'log-out-outline',    iconColor: C.red, label: 'Sign Out',        danger: true },
-        { kind: 'nav', icon: 'trash-outline',      iconColor: C.red, label: 'Delete Account',  danger: true, sub: 'Permanently remove all data' },
+        { kind: 'nav', icon: 'log-out-outline', iconColor: C.red, label: 'Sign Out', danger: true },
+        { kind: 'nav', icon: 'trash-outline', iconColor: C.red, label: 'Delete Account', danger: true, sub: 'Permanently remove all data' },
       ],
     },
   ]
@@ -223,7 +223,7 @@ export default function SettingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
 
-      
+
       <View style={{
         paddingTop: insets.top + 10,
         paddingHorizontal: 16,
@@ -248,7 +248,7 @@ export default function SettingsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
 
-       
+
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -290,17 +290,17 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
-      
+
         {SECTIONS.map((section) => {
-          const toggleItems  = section.items.filter((i): i is SettingToggle => i.kind === 'toggle')
-          const navItems     = section.items.filter((i): i is SettingNav    => i.kind === 'nav')
-          const isDanger     = section.title === 'Danger Zone'
+          const toggleItems = section.items.filter((i): i is SettingToggle => i.kind === 'toggle')
+          const navItems = section.items.filter((i): i is SettingNav => i.kind === 'nav')
+          const isDanger = section.title === 'Danger Zone'
 
           return (
             <View key={section.title}>
               <SectionHeader title={section.title} />
 
-             
+
               {toggleItems.length > 0 && (
                 <View style={{ backgroundColor: C.surface2, borderRadius: 16, borderWidth: 1, borderColor: C.border, overflow: 'hidden', marginBottom: navItems.length > 0 ? 8 : 0 }}>
                   {toggleItems.map((item, i) => (
@@ -311,13 +311,13 @@ export default function SettingsScreen() {
                 </View>
               )}
 
-              
+
               {navItems.length > 0 && (
                 <View style={{
                   backgroundColor: "black",
                   borderRadius: 16,
                   borderWidth: 1,
-                  borderColor:  C.border,
+                  borderColor: C.border,
                   overflow: 'hidden',
                 }}>
                   {navItems.map((item, i) => (
@@ -329,7 +329,7 @@ export default function SettingsScreen() {
           )
         })}
 
-      
+
         <Text style={{ color: C.muted, fontSize: 11, fontWeight: '600', textAlign: 'center', marginTop: 32 }}>
           Campus Commerce v1.0.0 · Graphic Era University
         </Text>

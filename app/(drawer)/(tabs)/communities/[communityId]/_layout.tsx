@@ -7,7 +7,6 @@ export default function _layout() {
     <Stack  screenOptions={ {headerShown: false,
         animation: "slide_from_right",}}>
       <Stack.Screen name="index" options={{headerShown:false}}></Stack.Screen>
-     <Stack.Screen name="channels/[channelId]" ></Stack.Screen>
     </Stack>
   )
 }

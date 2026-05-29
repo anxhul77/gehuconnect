@@ -1,37 +1,74 @@
-import { View, Text } from "react-native"
+import { View, Text, Pressable, ActivityIndicator } from "react-native"
 import React from "react"
-import { FlatList } from "react-native-gesture-handler"
-
-import CommunityRailBlock from "./CommunityRailBlock"
-import { useGetCommunitiesQuery } from "@/src/features/community.api"
-
+import { useGetCommunityRailQuery } from "@/src/features/community.api"
+import { Image } from "expo-image"
+import { useRouter } from "expo-router"
 
 export default function CommunityRail() {
-  const { data, isLoading, error } = useGetCommunitiesQuery()
-  console.log("rendered")
-  console.log("communityerror",error)
-  console.log("FULL DATA:", data)
-console.log("communities:", data)
+  const { data, isLoading, error } = useGetCommunityRailQuery({})
+  const router = useRouter()
 
   if (isLoading) {
-    return <Text className="text-white">Loading...</Text>
+    return (
+      <View className="py-4 items-center">
+        <ActivityIndicator size="small" color="#999" />
+      </View>
+    )
   }
 
   if (error) {
-    return <Text className="text-red-500">Failed to load communities</Text>
+    return (
+      <View className="py-4 px-4">
+        <Text className="text-red-500 text-sm">Failed to load communities</Text>
+      </View>
+    )
+  }
+
+  const communities = data?.communities || []
+
+  if (communities.length === 0) {
+    return (
+      <View className="py-4 px-4">
+        <Text className="text-zinc-500 text-sm">You haven't joined any communities yet.</Text>
+      </View>
+    )
   }
 
   return (
-    <View className="bg-pink-400 ">
-      <Text className="text-white">Communities</Text>
-      <FlatList
-        data={data}
-        keyExtractor={(data) => data.id}
-        showsVerticalScrollIndicator={false}
-        renderItem={(data) => (
-          <CommunityRailBlock community={data} />
-        )}
-      />
+    <View>
+      {communities.map((community) => (
+        <Pressable
+          key={community.id}
+          className="flex-row items-center py-3 px-4 active:bg-white/10"
+          onPress={() => {
+            router.push({
+              pathname: "/(drawer)/(tabs)/communities/profile/[communityProfileId]",
+              params: {
+                communityProfileId: community.id.toString(),
+                name: community.name,
+                avatar: community.avatarUrl,
+              },
+            })
+          }}
+        >
+          {community.avatarUrl ? (
+            <Image
+              source={{ uri: community.avatarUrl }}
+              style={{ width: 28, height: 28, borderRadius: 14 }}
+              contentFit="cover"
+            />
+          ) : (
+            <View className="w-7 h-7 rounded-full bg-zinc-700 items-center justify-center">
+              <Text className="text-white text-xs font-bold">
+                {community.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text className="text-white ml-3 text-[15px] font-medium">
+            {community.name}
+          </Text>
+        </Pressable>
+      ))}
     </View>
   )
 }

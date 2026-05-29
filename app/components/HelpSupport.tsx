@@ -13,7 +13,6 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
 const C = {
   bg: '#0A0A0A',
   surface1: '#141414',
@@ -32,7 +31,6 @@ const C = {
   teal: '#14B8A6',
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
   {
     q: 'How do I list an item for sale?',
@@ -69,17 +67,17 @@ const FAQ_ITEMS = [
 ]
 
 const QUICK_ACTIONS = [
-  { icon: 'chatbubbles-outline',  label: 'Live Chat',      sub: 'Avg. reply < 5 min',  color: C.green,  action: 'chat'  },
-  { icon: 'mail-outline',         label: 'Email Us',        sub: 'support@campusco.in', color: C.blue,   action: 'email' },
-  { icon: 'logo-whatsapp',        label: 'WhatsApp',        sub: '+91 98765 00000',     color: '#25D366', action: 'wa'   },
-  { icon: 'flag-outline',         label: 'Report Issue',    sub: 'Bug or abuse report', color: C.orange, action: 'report'},
+  { icon: 'chatbubbles-outline', label: 'Live Chat', sub: 'Avg. reply < 5 min', color: C.green, action: 'chat' },
+  { icon: 'mail-outline', label: 'Email Us', sub: 'support@campusco.in', color: C.blue, action: 'email' },
+  { icon: 'logo-whatsapp', label: 'WhatsApp', sub: '+91 98765 00000', color: '#25D366', action: 'wa' },
+  { icon: 'flag-outline', label: 'Report Issue', sub: 'Bug or abuse report', color: C.orange, action: 'report' },
 ]
 
 const GUIDES = [
-  { icon: 'storefront-outline',  color: C.orange, title: 'Selling Your First Item',   reading: '2 min read' },
+  { icon: 'storefront-outline', color: C.orange, title: 'Selling Your First Item', reading: '2 min read' },
   { icon: 'shield-checkmark-outline', color: C.green, title: 'Staying Safe on Campus', reading: '3 min read' },
-  { icon: 'cash-outline',        color: C.yellow, title: 'Payment Tips & UPI Guide',  reading: '2 min read' },
-  { icon: 'star-outline',        color: C.purple, title: 'Building Your Reputation',  reading: '4 min read' },
+  { icon: 'cash-outline', color: C.yellow, title: 'Payment Tips & UPI Guide', reading: '2 min read' },
+  { icon: 'star-outline', color: C.purple, title: 'Building Your Reputation', reading: '4 min read' },
 ]
 
 // ─── FAQ Accordion ────────────────────────────────────────────────────────────
@@ -129,7 +127,7 @@ export default function HelpSupportScreen() {
 
   const handleQuickAction = (action: string) => {
     if (action === 'email') Linking.openURL('mailto:support@campusco.in')
-    if (action === 'wa')    Linking.openURL('https://wa.me/919876500000')
+    if (action === 'wa') Linking.openURL('https://wa.me/919876500000')
   }
 
   return (
@@ -156,7 +154,7 @@ export default function HelpSupportScreen() {
           </View>
         </View>
 
-        
+
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -230,7 +228,7 @@ export default function HelpSupportScreen() {
           </View>
         )}
 
-      
+
         {search === '' && (
           <View style={{ paddingHorizontal: 16 }}>
             <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 }}>
@@ -267,7 +265,7 @@ export default function HelpSupportScreen() {
           </View>
         )}
 
-        
+
         {search === '' && (
           <View style={{ paddingHorizontal: 16, marginTop: 28 }}>
             <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 }}>
@@ -303,7 +301,7 @@ export default function HelpSupportScreen() {
           </View>
         )}
 
-        
+
         <View style={{ paddingHorizontal: 16, marginTop: 28 }}>
           <Text style={{ color: C.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 }}>
             {search ? `${filteredFAQ.length} result${filteredFAQ.length !== 1 ? 's' : ''} for "${search}"` : 'Frequently Asked Questions'}
@@ -339,7 +337,7 @@ export default function HelpSupportScreen() {
                     Your feedback helps us improve
                   </Text>
 
-                 
+
                   <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
                     {[1, 2, 3, 4, 5].map(star => (
                       <Pressable key={star} onPress={() => setRating(star)}>
@@ -352,7 +350,7 @@ export default function HelpSupportScreen() {
                     ))}
                   </View>
 
-                
+
                   <View style={{ backgroundColor: C.surface3, borderRadius: 12, borderWidth: 1, borderColor: C.border, marginBottom: 14 }}>
                     <TextInput
                       value={feedbackText}
@@ -403,7 +401,7 @@ export default function HelpSupportScreen() {
           </View>
         )}
 
-        
+
         <Text style={{ color: C.muted, fontSize: 11, fontWeight: '600', textAlign: 'center', marginTop: 32, paddingHorizontal: 16 }}>
           Campus Commerce · Graphic Era University{'\n'}Made with ♥ by students, for students
         </Text>

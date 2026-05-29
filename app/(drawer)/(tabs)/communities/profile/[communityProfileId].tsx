@@ -1,154 +1,180 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   Image,
-  ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  Dimensions,
   Animated,
-  StatusBar,
-  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
+  Modal,
   Pressable,
-} from 'react-native';
+} from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width, height } = Dimensions.get('window');
-const GRID_SIZE = (width - 3) / 3;
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Feather from "react-native-vector-icons/Feather";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { Entypo, MaterialIcons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
+import { useGetCommunityPostsQuery, useGetCommunityProfileQuery } from "@/src/features/community.api";
+import { CommunityPostsRes } from "@/src/types/types";
+import { FlashList } from "@shopify/flash-list";
+import Feedpostcard from "@/app/components/Feedpostcard";
+import { useRouter } from "expo-router";
 
-const COMMUNITY = {
-  name: 'GEU Dev Club',
-  handle: '@gedevclub',
-  university: 'Graphic Era University · P2P',
-  bio: 'Builders & hackers. We ship things, break stuff, and learn together. Hackathons, open-source & late-night deploys.',
-  memberCount: '1.2K',
-  postCount: '348',
-  activeNow: 24,
-  tags: ['#WebDev', '#OpenSource', '#Hackathon', '#AI', '#React'],
-  avatar: 'https://i.pravatar.cc/200?img=12',
-  isVerified: true,
 
-  // ── Set a URL to use a real photo, or null for animated blob background
-  bannerImage: 'https://images.unsplash.com/photo-1517134191118-9d595e4c8c2b?w=900&q=80' as string | null,
+const { width } = Dimensions.get("window");
 
-  posts: Array.from({ length: 9 }, (_, i) => ({
-    id: `p${i}`,
-    uri: `https://picsum.photos/seed/post${i}/300/300`,
-    pinned: i === 0,
-  })),
+const BANNER_H = 220;
+const HEADER_H = 56;
+const SCROLL_DIST = BANNER_H - HEADER_H;
 
-  events: [
-    { id: 'e1', title: 'Hackathon 2025', date: 'Apr 28', uri: 'https://picsum.photos/seed/ev1/300/300' },
-    { id: 'e2', title: 'React Workshop', date: 'May 3', uri: 'https://picsum.photos/seed/ev2/300/300' },
-    { id: 'e3', title: 'AI Study Jam', date: 'May 10', uri: 'https://picsum.photos/seed/ev3/300/300' },
-    { id: 'e4', title: 'Open Source Day', date: 'May 17', uri: 'https://picsum.photos/seed/ev4/300/300' },
-    { id: 'e5', title: 'Deploy Night', date: 'May 24', uri: 'https://picsum.photos/seed/ev5/300/300' },
-    { id: 'e6', title: 'System Design', date: 'Jun 1', uri: 'https://picsum.photos/seed/ev6/300/300' },
-  ],
-
-  members: Array.from({ length: 9 }, (_, i) => ({
-    id: `m${i}`,
-    name: ['Aryan S.', 'Neha R.', 'Priya M.', 'Rohan K.', 'Aisha T.', 'Dev P.', 'Sana L.', 'Kiran J.', 'Mia V.'][i],
-    role: i === 0 ? 'Admin' : i < 3 ? 'Mod' : 'Member',
-    uri: `https://i.pravatar.cc/150?img=${i + 20}`,
-  })),
-};
+const GRID_GAP = 1.5;
+const GRID_SIZE = (width - GRID_GAP * 2) / 3;
 
 const TABS = [
-  { key: 'posts', icon: <MaterialIcons name="post-add" size={24} color="white" />, label: 'Posts' },
-  { key: 'events', icon: <MaterialIcons name="event-note" size={24} color="white" />, label: 'Events' },
-  { key: 'members', icon: <Ionicons name="people-sharp" size={24} color="white" />, label: 'Members' },
+  {
+    key: "posts",
+    icon: <MaterialIcons name="post-add" size={20} color="white" />,
+    label: "Posts",
+  },
+  {
+    key: "members",
+    icon: <Ionicons name="people-sharp" size={20} color="white" />,
+    label: "Members",
+  },
+  {
+    key: "events",
+    icon: <MaterialIcons name="event-note" size={20} color="white" />,
+    label: "Events",
+  },
+  {
+    key: "about",
+    icon: <Ionicons name="information-circle" size={20} color="white" />,
+    label: "About",
+  },
 ] as const;
-type TabKey = (typeof TABS)[number]['key'];
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Blob BG (used when bannerImage === null)
-// ─────────────────────────────────────────────────────────────────────────────
+type TabKey = (typeof TABS)[number]["key"];
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Grid cells
-// ─────────────────────────────────────────────────────────────────────────────
-function PostGrid({ items }: { items: typeof COMMUNITY.posts }) {
+function PostSection({ items, communityId }: { items: CommunityPostsRes; communityId: string }) {
+  const initialPosts = items.communityPosts ?? [];
+  const [cursor, setCursor] = useState("");
+
+  const { data, isLoading, isFetching, isError } =
+    useGetCommunityPostsQuery(
+      {
+        communityId,
+        cursor,
+        limit: "10",
+      },
+      {
+        skip: !communityId,
+        refetchOnMountOrArgChange: true,
+      }
+    );
+
+
+
+
+  const handleLoadMore = useCallback(() => {
+    if (
+      isFetching ||
+      isLoading ||
+      !data?.hasNext ||
+      !data?.nextCursor ||
+      data.nextCursor === cursor
+    ) {
+      return;
+    }
+
+    setCursor(data.nextCursor);
+  }, [
+    isFetching,
+    isLoading,
+    data?.hasNext,
+    data?.nextCursor,
+    cursor,
+  ]);
+
+  const paginatedPosts =
+    data?.communityPosts ?? [];
+
+  const posts = useMemo(() => {
+    const merged = [
+      ...initialPosts,
+      ...paginatedPosts,
+    ];
+
+    return Array.from(
+      new Map(merged.map((p) => [p.postId, p])).values()
+    );
+  }, [initialPosts, paginatedPosts]);
+  if (!initialPosts) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No posts yet</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.grid}>
-      {items.map((item) => {
-        const scale = useRef(new Animated.Value(1)).current;
-        return (
-          <TouchableOpacity
-            key={item.id}
-            activeOpacity={1}
-            onPressIn={() => Animated.spring(scale, { toValue: 0.95, useNativeDriver: true }).start()}
-            onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()}
-          >
-            <Animated.View style={[styles.gridCell, { transform: [{ scale }] }]}>
-              <Image source={{ uri: item.uri }} style={styles.gridImg} />
-              {item.pinned && (
-                <View style={styles.pinnedBadge}><Text style={{ fontSize: 10 }}>📌</Text></View>
-              )}
-            </Animated.View>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+    <FlashList
+      data={posts}
+      keyExtractor={(item) => item.postId.toString()}
+      renderItem={({ item }) => <Feedpostcard post={item} />}
+      estimatedItemSize={180}
+      inverted
+      onEndReached={handleLoadMore}
+      onEndReachedThreshold={0.3}
+
+
+      contentContainerStyle={style.listContent}
+      showsVerticalScrollIndicator={false}
+    />
   );
 }
 
-function EventGrid({ items }: { items: typeof COMMUNITY.events }) {
-  return (
-    <View style={styles.grid}>
-      {items.map((item) => (
-        <TouchableOpacity key={item.id} activeOpacity={0.85}>
-          <View style={styles.gridCell}>
-            <Image source={{ uri: item.uri }} style={styles.gridImg} />
-            <View style={styles.eventOverlay}>
-              <View style={styles.eventDateBadge}><Text style={styles.eventDateTxt}>{item.date}</Text></View>
-              <Text style={styles.eventTitle} numberOfLines={2}>{item.title}</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
+const style = StyleSheet.create({
+  listContent: {
 
-function MemberGrid({ items }: { items: typeof COMMUNITY.members }) {
-  return (
-    <View style={styles.grid}>
-      {items.map((item) => (
-        <TouchableOpacity key={item.id} activeOpacity={0.85}>
-          <View style={[styles.gridCell, styles.memberCell]}>
-            <Image source={{ uri: item.uri }} style={styles.memberAvatar} />
-            <Text style={styles.memberName} numberOfLines={1}>{item.name}</Text>
-            <View style={[styles.roleBadge, item.role === 'Admin' && styles.roleAdmin, item.role === 'Mod' && styles.roleMod]}>
-              <Text style={styles.roleText}>{item.role}</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
+    paddingVertical: 8,
+  },
+})
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Tab bar
-// ─────────────────────────────────────────────────────────────────────────────
-function TabBar({ active, onChange }: { active: TabKey; onChange: (k: TabKey) => void }) {
+function TabBar({
+  active,
+  onChange,
+}: {
+  active: TabKey;
+  onChange: (k: TabKey) => void;
+}) {
   return (
     <View style={styles.tabBar}>
       {TABS.map((tab) => {
         const isActive = active === tab.key;
+
         return (
           <TouchableOpacity
             key={tab.key}
             style={styles.tabItem}
             onPress={() => onChange(tab.key)}
-            activeOpacity={0.75}
+            activeOpacity={0.8}
           >
-            <View style={[styles.tabIcon, isActive && styles.tabIconActive]}>{tab.icon}</View>
-            <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
+
+
+            <Text
+              style={[
+                styles.tabLabel,
+                isActive && styles.tabLabelActive,
+              ]}
+            >
+              {tab.label}
+            </Text>
+
             {isActive && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
         );
@@ -156,348 +182,648 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (k: TabKey) =>
     </View>
   );
 }
+const MENU_ITEMS = [
+  { icon: 'pricetag', label: 'Create Channel', route: '/components/community/CreateChannel' },
+  { icon: 'calendar', label: 'Create Event', route: '/components/community/Settings' },
+  { icon: 'folder-open-sharp', label: 'Create Category', route: '/components/community/Settings' },
+  { icon: 'settings-sharp', label: 'Settings', route: '/components/community/Settings' },
+  { icon: 'warning-sharp', label: 'Report', route: '/components/marketplace/OfferPage' },
+  { icon: 'help-circle-outline', label: 'Help & Support', route: '/components/HelpSupport' },
+]
+export default function CommunityProfileScreen() {
+  const router = useRouter()
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Main screen
-// ─────────────────────────────────────────────────────────────────────────────
-export default function CommunityProfile() {
-  const [activeTab, setActiveTab] = useState<TabKey>('posts');
-  const fadeY = useRef(new Animated.Value(20)).current;
-  const fade = useRef(new Animated.Value(0)).current;
-   const router =useRouter();
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fade, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.spring(fadeY, { toValue: 0, useNativeDriver: true }),
-    ]).start();
-  }, []);
+  const [activeTab, setActiveTab] = useState<TabKey>("posts");
+  const [menuVisible, setMenuVisible] = useState(false)
+  const handleMenuPress = (route: string | null) => {
+    setMenuVisible(false)
+
+    if (route) {
+      router.push({
+        pathname: route as any,
+        params: { communityId: communityProfileId }
+      })
+    }
+  }
+  const { communityProfileId, name, avatar, isJoined: isJoinedParam, tags: tagsParam } = useLocalSearchParams<{
+    communityProfileId: string;
+    name: string;
+    avatar: string;
+    isJoined: string;
+    tags: string[];
+  }>();
+  const communityId = Number(communityProfileId);
+  const { data: communityData, isLoading: isCommunityDataLoading } = useGetCommunityProfileQuery(communityId);
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+
+  const isLoading = false;
+
+  const headerBgOpacity = scrollY.interpolate({
+    inputRange: [0, SCROLL_DIST],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const titleOpacity = scrollY.interpolate({
+    inputRange: [SCROLL_DIST - 40, SCROLL_DIST],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+
+  const bannerScale = scrollY.interpolate({
+    inputRange: [-200, 0],
+    outputRange: [1.4, 1],
+    extrapolateRight: "clamp",
+  });
+
+  const bannerTranslateY = scrollY.interpolate({
+    inputRange: [0, SCROLL_DIST],
+    outputRange: [0, -40],
+    extrapolate: "clamp",
+  });
+
+  const avatarScale = scrollY.interpolate({
+    inputRange: [0, SCROLL_DIST],
+    outputRange: [1, 0.7],
+    extrapolate: "clamp",
+  });
+
+  const avatarTranslateY = scrollY.interpolate({
+    inputRange: [0, SCROLL_DIST],
+    outputRange: [0, -10],
+    extrapolate: "clamp",
+  });
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <View style={styles.container}>
 
-      {/* ── Full-screen background (absolute, covers everything) ── */}
-      <View style={StyleSheet.absoluteFill}>
-        {COMMUNITY.bannerImage ? (
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            backgroundColor: headerBgOpacity.interpolate({
+              inputRange: [0, 1],
+              outputRange: [
+                "rgba(0,0,0,0)",
+                "rgba(0,0,0,0.95)",
+              ],
+            }),
+          },
+        ]}
+      >
+        <SafeAreaView edges={["top"]}>
+          <View style={styles.headerContent}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity style={styles.headerBtn}>
+                <Ionicons
+                  name="arrow-back"
+                  size={22}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+
+              <Animated.Text
+                style={[
+                  styles.headerTitle,
+                  {
+                    opacity: titleOpacity,
+                  },
+                ]}
+              >
+                {name}
+              </Animated.Text>
+            </View>
+
+            <Pressable style={styles.headerBtn} onPress={() => setMenuVisible(true)}>
+              <Entypo
+                name="dots-three-vertical"
+                size={18}
+                color="white"
+              />
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Animated.View>
+
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        contentContainerStyle={{
+          paddingBottom: 100,
+        }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          {
+            useNativeDriver: true,
+          }
+        )}
+      >
+
+        <Animated.View
+          style={{
+            transform: [
+              { scale: bannerScale },
+              { translateY: bannerTranslateY },
+            ],
+          }}
+        >
           <Image
-            source={{ uri: COMMUNITY.bannerImage }}
-            style={StyleSheet.absoluteFill}
+            source={{
+              uri: communityData?.bannerUrl,
+            }}
+            style={styles.banner}
             resizeMode="cover"
           />
-        ) : (
-            <View></View>
-        )}
-        {/* Heavy dark gradient overlay so content is readable */}
-      
-        <View style={styles.bgOverlayBottom} />
-      </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
-        style={{ flex: 1 }}
-      >
-        {/* ── Top bar (floating) ── */}
-        <View style={styles.topBar}>
-          <Pressable style={styles.circleBtn} onPress={()=>router.back()}>
-            <Text style={styles.circleBtnIcon}>←</Text>
-          </Pressable>
-          <Pressable style={styles.circleBtn2}>
-            <Text style={styles.circleBtnIcon}>⋯</Text>
-          </Pressable>
-        </View>
-
-        {/* ── Hero spacer — enough room so text starts mid-screen ── */}
-      
-
-        {/* ── Avatar ── */}
-        <View style={styles.avatarWrap}>
-          <View style={styles.avatarRing}>
-            <Image source={{ uri: COMMUNITY.avatar }} style={styles.avatar} />
-          </View>
-          <View style={styles.onlineDot} />
-        </View>
-
-        {/* ── Profile info ── */}
-        <Animated.View style={[styles.profileBlock,  ]}>
-
-          <View style={styles.nameRow}>
-            <Text style={styles.name}>{COMMUNITY.name}</Text>
-            {COMMUNITY.isVerified && (
-              <View style={styles.verifiedDot}>
-                <Text style={styles.verifiedCheck}>✓</Text>
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.handle}>{COMMUNITY.handle}</Text>
-
-          <View style={styles.uniChip}>
-            <Text style={styles.uniText}>{COMMUNITY.university}</Text>
-          </View>
-
-          <View style={styles.activePill}>
-            <View style={styles.activeDotSmall} />
-            <Text style={styles.activeLabel}>{COMMUNITY.activeNow} active now</Text>
-          </View>
-
-          <Text style={styles.bio}>{COMMUNITY.bio}</Text>
-
-          {/* Tags */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagsScroll}>
-            {COMMUNITY.tags.map((t) => (
-              <View key={t} style={styles.tag}><Text style={styles.tagTxt}>{t}</Text></View>
-            ))}
-          </ScrollView>
-
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>{COMMUNITY.memberCount}</Text>
-              <Text style={styles.statLbl}>Members</Text>
-            </View>
-            <View style={styles.statSep} />
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>{COMMUNITY.postCount}</Text>
-              <Text style={styles.statLbl}>Posts</Text>
-            </View>
-            <View style={styles.statSep} />
-            <View style={styles.statItem}>
-              <Text style={styles.statVal}>{COMMUNITY.activeNow}</Text>
-              <Text style={styles.statLbl}>Online</Text>
-            </View>
-          </View>
-
-          {/* CTAs */}
-          <View style={styles.ctaRow}>
-            <TouchableOpacity style={styles.joinBtn} activeOpacity={0.85}>
-              <Text style={styles.joinTxt}>Join Community</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.msgBtn} activeOpacity={0.75}>
-              <Text style={styles.msgIcon}>💬</Text>
-            </TouchableOpacity>
-          </View>
+          <View style={styles.bannerOverlay} />
         </Animated.View>
 
-        {/* ── Tab bar + content (sits on dark section) ── */}
-        <View style={styles.contentSection}>
-          <TabBar active={activeTab} onChange={setActiveTab} />
 
-          {activeTab === 'posts' && <PostGrid items={COMMUNITY.posts} />}
-          {activeTab === 'events' && <EventGrid items={COMMUNITY.events} />}
-          {activeTab === 'members' && <MemberGrid items={COMMUNITY.members} />}
+        <View style={styles.profileSection}>
+
+          <View style={styles.profileTop}>
+            <Animated.View
+              style={{
+                transform: [
+                  { scale: avatarScale },
+                  { translateY: avatarTranslateY },
+                ],
+              }}
+            >
+              <Image
+                source={{
+                  uri: avatar,
+                }}
+                style={styles.avatar}
+              />
+
+              <View style={styles.onlineDot} />
+            </Animated.View>
+
+            <View style={styles.actionsRow}>
+              {isJoinedParam ?
+                <TouchableOpacity style={styles.joinBtn}>
+                  <Text style={styles.joinBtnText}>Joined</Text>
+                </TouchableOpacity>
+                : <TouchableOpacity style={styles.joinBtn}>
+                  <Text style={styles.joinBtnText}>Join</Text>
+                </TouchableOpacity>}
+
+
+              <TouchableOpacity style={styles.iconBtn}>
+                <Feather
+                  name="bell"
+                  size={18}
+                  color="#F2F3F5"
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.iconBtn}>
+                <Feather
+                  name="share-2"
+                  size={18}
+                  color="#F2F3F5"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+
+          <View style={{ marginTop: 16 }}>
+            <View style={styles.titleRow}>
+              <Text style={styles.communityTitle}>
+                {name}
+              </Text>
+
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={20}
+                color="#5865F2"
+                style={{ marginLeft: 6 }}
+              />
+            </View>
+
+            <View style={styles.subRow}>
+              <Text style={styles.communityHandle}>
+                c/{name}
+              </Text>
+
+              <View style={styles.dot} />
+
+              <View style={styles.verifiedBadge}>
+                <Text style={styles.verifiedText}>
+                  VERIFIED COMMUNITY
+                </Text>
+              </View>
+            </View>
+          </View>
+
+
+          <View style={styles.statsRow}>
+            <View>
+              <Text style={styles.statsNumber}>{communityData?.memberCount}</Text>
+              <Text style={styles.statsLabel}>MEMBERS</Text>
+            </View>
+
+            <View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={styles.greenDot} />
+                <Text style={styles.statsNumber}>1.2k</Text>
+              </View>
+
+              <Text style={styles.statsLabel}>ONLINE</Text>
+            </View>
+
+            <View>
+              <Text style={styles.statsNumber}>{communityData?.postCount}</Text>
+              <Text style={styles.statsLabel}>POSTS</Text>
+            </View>
+          </View>
+
+          <View style={{ marginTop: 20 }}>
+            <Text style={styles.description}>
+              {communityData?.description}
+            </Text>
+
+
+            <View style={styles.tagsWrap}>
+              {communityData?.tags.map((tag) => (
+                <View key={tag} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+
         </View>
 
-      </ScrollView>
+        <View style={styles.contentSection}>
+          <TabBar
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+
+          {isLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color="#3b82f6" />
+            </View>
+          ) : (
+            <>
+              {activeTab === "posts" && (
+                <PostSection
+                  items={communityData?.posts ?? []}
+                  communityId={String(communityId)}
+
+
+                />
+              )}
+
+              {activeTab === "events" && (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    No events scheduled
+                  </Text>
+                </View>
+              )}
+
+              {activeTab === "members" && (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    Member list is private
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
+        </View>
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable style={{ flex: 1 }} onPress={() => setMenuVisible(false)}>
+            <View
+              style={{
+                position: 'absolute',
+
+                right: 5,
+                backgroundColor: 'black',
+                borderRadius: 16,
+                borderWidth: 1,
+                paddingVertical: 6,
+                minWidth: 180,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.4,
+                shadowRadius: 16,
+                elevation: 12,
+              }}
+            >
+              {MENU_ITEMS.map((item, index) => (
+                <TouchableOpacity
+                  key={item.label}
+                  onPress={() => handleMenuPress(item.route)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    paddingVertical: 13,
+                    borderBottomWidth: index < MENU_ITEMS.length - 1 ? 1 : 0,
+                    borderBottomColor: '#2A2A2A',
+                  }}
+                >
+                  <Ionicons name={item.icon as any} size={18} color={item.route ? "#FFFFFF" : '#B3B3B3'} style={{ marginRight: 12 }} />
+                  <Text style={{ color: '#B3B3B3', fontSize: 14, fontWeight: item.route ? '700' : '600' }}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
+      </Animated.ScrollView>
+
     </View>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Styles
-// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
 
-  // bg overlays
-
-  bgOverlayBottom: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-
-    height: height ,
-    backgroundColor: 'rgba(0,0,0,0.72)',
+  header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 999,
   },
 
-  // blob
+  headerContent: {
+    height: HEADER_H,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+  },
 
+  headerBtn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-  // top bar
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 52,
-    paddingBottom: 8,
+  headerTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: 8,
   },
-  circleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    
-  },
-  circleBtn2: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent:'center'
-  },
-  circleBtnIcon: { color: '#fff', fontSize: 17, fontWeight: '600' },
 
-  // avatar
-  avatarWrap: { alignItems: 'center', marginBottom: 12, position: 'relative' },
-  avatarRing: {
-    width: 94,
-    height: 94,
-    borderRadius: 47,
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#111',
+  banner: {
+    width: "100%",
+    height: BANNER_H,
   },
-  avatar: { width: 88, height: 88, borderRadius: 44 },
+
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+
+  profileSection: {
+    paddingHorizontal: 20,
+    marginTop: -50,
+  },
+
+  profileTop: {
+    flex: 1, flexDirection: "row",
+
+    height: 98,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+
+  avatar: {
+    width: 86,
+    height: 90,
+    borderRadius: 28,
+    borderWidth: 4,
+    borderColor: "#000",
+  },
+
   onlineDot: {
-    position: 'absolute',
-    bottom: 4, right: width / 2 - 47 - 2,
-    width: 13, height: 13,
-    borderRadius: 7,
-    backgroundColor: '#1DB954',
-    borderWidth: 2,
-    borderColor: '#000',
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#23A559",
+    borderWidth: 4,
+    borderColor: "#000",
   },
 
-  // profile
-  profileBlock: { alignItems: 'center', paddingHorizontal: 20 },
+  actionsRow: {
 
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
-  name: { color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: 0.1 },
-  verifiedDot: {
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#e8334a', alignItems: 'center', justifyContent: 'center',
-  },
-  verifiedCheck: { color: '#fff', fontSize: 10, fontWeight: '800' },
 
-  handle: { color: 'rgba(255,255,255,0.45)', fontSize: 13, marginBottom: 10, letterSpacing: 0.4 },
+    flexDirection: "row",
+    alignItems: "center",
 
-  uniChip: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5,
-    marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-  },
-  uniText: { color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: '500', letterSpacing: 0.3 },
 
-  activePill: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  activeDotSmall: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#1DB954' },
-  activeLabel: { color: '#1DB954', fontSize: 12, fontWeight: '600' },
-
-  bio: {
-    color: 'rgba(255,255,255,0.6)', fontSize: 13.5, lineHeight: 21,
-    textAlign: 'center', marginBottom: 14, letterSpacing: 0.15,
   },
 
-  tagsScroll: { flexDirection: 'row', gap: 7, paddingHorizontal: 4, marginBottom: 18 },
-  tag: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 20, paddingHorizontal: 11, paddingVertical: 5,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  joinBtn: {
+    backgroundColor: "#5865F2",
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginRight: 7,
   },
-  tagTxt: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
+
+  joinBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  joinBtnText2: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  communityTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+
+  subRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+
+  communityHandle: {
+    color: "#888",
+    fontSize: 14,
+  },
+
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#555",
+    marginHorizontal: 8,
+  },
+
+  verifiedBadge: {
+    backgroundColor: "#151515",
+    borderWidth: 1,
+    borderColor: "#222",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+
+  verifiedText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+  },
 
   statsRow: {
-    flexDirection: 'row', width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-    paddingVertical: 14, marginBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 28,
   },
-  statItem: { flex: 1, alignItems: 'center' },
-  statVal: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  statLbl: { color: 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: '600', marginTop: 2, letterSpacing: 1, textTransform: 'uppercase' },
-  statSep: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.1)', alignSelf: 'center' },
 
-  ctaRow: { flexDirection: 'row', width: '100%', gap: 10, marginBottom: 4 },
-  joinBtn: { flex: 1, backgroundColor: '#3b82f6', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  joinTxt: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.3 },
-  msgBtn: {
-    width: 48, height: 48, borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center', justifyContent: 'center',
+  statsNumber: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
   },
-  msgIcon: { fontSize: 19 },
 
-  // ── Content section (dark solid base for grid area)
+  statsLabel: {
+    color: "#666",
+    fontSize: 11,
+    marginTop: 4,
+    fontWeight: "700",
+  },
+
+  greenDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#23A559",
+    marginRight: 6,
+  },
+
+  description: {
+    color: "#ccc",
+    lineHeight: 22,
+  },
+
+  tagsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 14,
+  },
+
+  tag: {
+    backgroundColor: "#151515",
+    borderWidth: 1,
+    borderColor: "#222",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+
+  },
+
+  tagText: {
+    color: "#888",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
   contentSection: {
-    backgroundColor: '#000',
-    marginTop: 24,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    overflow: 'hidden',
-    // top border line
-    borderTopWidth: 1,
-    borderColor: '#1e1e1e',
+    marginTop: 15,
+
+
+    overflow: "hidden",
+    backgroundColor: "black",
   },
 
-  // ── Tab bar
   tabBar: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
-    backgroundColor: '#000',
+    borderBottomColor: "#161616",
+    backgroundColor: "black"
   },
+
   tabItem: {
     flex: 1,
-    alignItems: 'center',
-    paddingVertical: 13,
-    position: 'relative',
+    alignItems: "center",
+    paddingVertical: 14,
   },
-  tabIcon: { fontSize: 18, marginBottom: 2, opacity: 0.35 },
-  tabIconActive: { opacity: 1 },
-  tabLabel: { color: '#444', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
-  tabLabelActive: { color: '#fff' },
+
+  tabLabel: {
+    color: "#555",
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 6,
+  },
+
+  tabLabelActive: {
+    color: "#fff",
+  },
+
   tabUnderline: {
-    position: 'absolute',
-    bottom: 0, left: '15%', right: '15%',
+    position: "absolute",
+    bottom: 0,
+    left: "20%",
+    right: "20%",
     height: 2,
-    backgroundColor: 'white',
-    borderRadius: 2,
+    backgroundColor: "#fff",
+    borderRadius: 999,
   },
 
-  // ── Grid
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 1.5 },
-  gridCell: { width: GRID_SIZE, height: GRID_SIZE, overflow: 'hidden', backgroundColor: '#111' },
-  gridImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  pinnedBadge: {
-    position: 'absolute', top: 5, right: 5,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 6, padding: 3,
+
+
+
+
+
+  loadingWrap: {
+    paddingVertical: 60,
   },
 
-  // events overlay
-  eventOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.48)',
-    padding: 8,
-    justifyContent: 'flex-end',
+  emptyContainer: {
+    paddingVertical: 80,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  eventDateBadge: {
-    backgroundColor: '#e8334a',
-    borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2,
-    alignSelf: 'flex-start', marginBottom: 4,
-  },
-  eventDateTxt: { color: '#fff', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
-  eventTitle: { color: '#fff', fontSize: 11, fontWeight: '700', lineHeight: 14 },
 
-  // members
-  memberCell: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d0d0d', gap: 4 },
-  memberAvatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 1.5, borderColor: '#2a2a2a' },
-  memberName: { color: '#ccc', fontSize: 11, fontWeight: '600', paddingHorizontal: 4 },
-  roleBadge: {
-    backgroundColor: '#1a1a1a', borderRadius: 10,
-    paddingHorizontal: 8, paddingVertical: 2,
-    borderWidth: 1, borderColor: '#2a2a2a',
+  emptyText: {
+    color: "#555",
+    fontWeight: "600",
   },
-  roleAdmin: { backgroundColor: 'rgba(232,51,74,0.15)', borderColor: '#e8334a' },
-  roleMod: { backgroundColor: 'rgba(29,185,84,0.12)', borderColor: '#1DB954' },
-  roleText: { color: '#888', fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
 });

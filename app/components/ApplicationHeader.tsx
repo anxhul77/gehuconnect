@@ -5,23 +5,22 @@ import { useNavigation, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
- function ApplicationHeader() {
+function ApplicationHeader() {
   const navigation = useNavigation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const handleMenuClick=()=>{
+  const handleMenuClick = () => {
     console.log("clickef")
     navigation.dispatch(DrawerActions.openDrawer());
   }
   return (
     <View
       style={{
-    
+
         backgroundColor: "black",
         paddingTop: insets.top,
         paddingHorizontal: 12,
-        borderBottomWidth:1,
-        borderBottomColor:"rgba(255,255,255,0.15)"
+
 
       }}
     >
@@ -32,31 +31,31 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
           alignItems: "center",
         }}
       >
-      
+
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginLeft: 6, 
+            marginLeft: 6,
           }}
         >
-          <Pressable onPress={()=>{handleMenuClick()}}>
+          <Pressable onPress={() => { handleMenuClick() }}>
             <View style={styles.iconBox}>
-              <MaterialIcons name="menu" size={26} color="#999" />
+              <MaterialIcons name="menu" size={26} color="white" />
             </View>
           </Pressable>
-         <View style={{display:'flex',flexDirection:"row",justifyContent:"center",alignItems:"center",width:110,height:50,marginLeft:10}}>
-          <Image
-            source={require("../../assets/images/geuconnectlogotransparent.png")}
-            style={{flex:1, width:"100%", height:'100%',marginBottom:7,}}
-            contentFit="cover"
-            contentPosition={'center'}
-          />
-         
+          <View style={{ display: 'flex', flexDirection: "row", justifyContent: "center", alignItems: "center", width: 110, height: 50, marginLeft: 10 }}>
+            <Image
+              source={require("../../assets/images/geuconnectlogotransparent.png")}
+              style={{ flex: 1, width: "100%", height: '100%', marginBottom: 7, }}
+              contentFit="cover"
+              contentPosition={'center'}
+            />
+
           </View>
         </View>
 
-  
+
         <View
           style={{
             flexDirection: "row",
@@ -64,7 +63,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
             marginLeft: "auto",
           }}
         >
-          <Pressable style={{ marginHorizontal: 6 }}>
+          <Pressable style={{ marginHorizontal: 6 }} onPress={() => router.push("/(drawer)/(tabs)/home/search")}>
             <View style={styles.iconBox}>
               <Ionicons name="search-outline" size={24} color="#999" />
             </View>
@@ -82,14 +81,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 }
 
 const styles = StyleSheet.create({
-  iconBox:{
-  width: 40,
-  height: 40,
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.15)",
-  borderRadius: 12,
-  justifyContent: "center",
-  alignItems: "center",
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   }
 }
 )

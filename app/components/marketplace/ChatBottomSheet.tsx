@@ -11,14 +11,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SELLER = { name: "Rohan", initial: "R", rating: "4.8" }
 
-// Spotify-style vibrant palette on black
+
 const C = {
   bg: '#0A0A0A',
   surface: '#1A1A1A',
   surface2: '#242424',
   border: '#2A2A2A',
-  accent: '#FF6B35',       // your brand orange
-  neonPink: '#FF2D78',     // spotify-style vibrant
+  accent: '#FF6B35',
+  neonPink: '#FF2D78',
   neonGreen: '#1DB954',
   white: '#FFFFFF',
   muted: '#535353',
@@ -150,7 +150,7 @@ const ChatBottomSheet = forwardRef<BottomSheet>((_props, ref) => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-       
+
         <View className="self-center mb-5">
           <Text style={{ color: C.muted, fontSize: 11, fontWeight: '600', letterSpacing: 0.5 }}>TODAY</Text>
         </View>

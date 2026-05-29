@@ -37,10 +37,11 @@ import {
   useSendMessageMutation,
   useLoadOlderMessagesMutation,
 } from "@/src/features/chat/chat.api";
+import { router } from "expo-router";
 
 const LOG_TAG = "[Channel]";
 
-// ── Loading skeleton ──────────────────────────────────────────────────────────
+
 function LoadingSkeleton() {
   return (
     <View style={sk.container}>
@@ -80,7 +81,7 @@ const sk = StyleSheet.create({
   },
 });
 
-// ── Error state ───────────────────────────────────────────────────────────────
+
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <View style={es.container}>
@@ -118,7 +119,7 @@ const es = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });
 
-// ── Channel screen ────────────────────────────────────────────────────────────
+
 export default function Channel() {
   const params = useLocalSearchParams<{
     channelId: string;
@@ -133,30 +134,19 @@ export default function Channel() {
   const channelName = Array.isArray(params.name)
     ? params.name[0]
     : params.name;
+  const communityId =
+    (Array.isArray(params.communityId)
+      ? params.communityId[0]
+      : params.communityId) ?? "";
+  console.log(channelName)
+  const [isPublicFeed, setIsPublicFeed] = useState(channelName == "publicfeed")
 
-  const isPublicFeed = channelName === "publicfeed";
-
-  // ── Emoji sheet ─────────────────────────────────────────────────────────
   const emojiSheetRef = useRef<BottomSheetModal>(null);
   const emojiOpen = useRef(false);
 
-  // ── Attachment tray ─────────────────────────────────────────────────────
+
   const [trayVisible, setTrayVisible] = useState(false);
 
-  // ── Back handler ────────────────────────────────────────────────────────
-  useBackHandler(() => {
-    if (trayVisible) {
-      setTrayVisible(false);
-      return true;
-    }
-    if (emojiOpen.current) {
-      emojiSheetRef.current?.dismiss();
-      return true;
-    }
-    return false;
-  });
-
-  // ── Message state + upload hook ─────────────────────────────────────────
   const [message, setMessage] = useState("");
   const {
     attachments,
@@ -170,7 +160,7 @@ export default function Channel() {
     (message.trim().length > 0 || attachments.length > 0) && !isUploading;
   const sendDisabled = isUploading;
 
-  // ── RTK query — chat only (PostList owns feed fetching) ─────────────────
+
   const {
     data: chatData,
     isLoading: chatLoading,
@@ -179,12 +169,12 @@ export default function Channel() {
     isFetching: chatFetching,
   } = useGetMessagesQuery({ channelId }, { skip: !channelId || isPublicFeed });
 
-  // ── Mutations ───────────────────────────────────────────────────────────
+
   const [sendMessage] = useSendMessageMutation();
   const [loadOlderMessages, { isLoading: isLoadingOlder }] =
     useLoadOlderMessagesMutation();
 
-  // ── Load older chat messages ────────────────────────────────────────────
+
   const handleLoadOlder = useCallback(async () => {
     const cursor = chatData?.nextCursor;
     if (!cursor || isLoadingOlder) return;
@@ -195,7 +185,7 @@ export default function Channel() {
     }
   }, [channelId, chatData?.nextCursor, isLoadingOlder, loadOlderMessages]);
 
-  // ── Retry failed message ────────────────────────────────────────────────
+
   const handleRetry = useCallback(
     (clientId: string) => {
       const msg = chatData?.messages.find((m) => m.clientId === clientId);
@@ -210,7 +200,7 @@ export default function Channel() {
     [chatData, channelId, sendMessage]
   );
 
-  // ── Send message ────────────────────────────────────────────────────────
+
   const handleSend = useCallback(() => {
     const trimmed = message.trim();
     if (!trimmed && attachments.length === 0) return;
@@ -241,7 +231,7 @@ export default function Channel() {
     clearAttachments();
   }, [message, attachments, channelId, sendMessage, clearAttachments]);
 
-  // ── Build LocalAttachment ───────────────────────────────────────────────
+
   const buildAttachment = useCallback(
     (
       uri: string,
@@ -272,7 +262,7 @@ export default function Channel() {
     [attachments.length]
   );
 
-  // ── UI handlers ─────────────────────────────────────────────────────────
+
   const handlePlusPress = useCallback(() => {
     if (emojiOpen.current) emojiSheetRef.current?.dismiss();
     setTrayVisible((v) => !v);
@@ -289,7 +279,6 @@ export default function Channel() {
     if (emojiOpen.current) emojiSheetRef.current?.dismiss();
   }, []);
 
-  // ── Pick media ──────────────────────────────────────────────────────────
   const handlePickMedia = useCallback(async () => {
     setTrayVisible(false);
     const remaining = LIMITS.maxFiles - attachments.length;
@@ -349,7 +338,7 @@ export default function Channel() {
     if (items.length) addAttachments(items);
   }, [attachments.length, buildAttachment, addAttachments]);
 
-  // ── Guard ────────────────────────────────────────────────────────────────
+
   if (!channelId) {
     return (
       <View style={styles.invalidChannel}>
@@ -358,16 +347,16 @@ export default function Channel() {
     );
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
       <StatusBar barStyle="light-content" />
-      <ChannelHeader name={channelName} online={1} />
+      <ChannelHeader name={channelName} online={1} communityId={params.communityId as string} />
 
       <View style={styles.body}>
         {isPublicFeed ? (
-          // PostList owns its own data fetching + pagination
-          <PostList channelId={channelId} />
+
+          <PostList communityId={communityId} />
         ) : chatLoading ? (
           <LoadingSkeleton />
         ) : chatError ? (
