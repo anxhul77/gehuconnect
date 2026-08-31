@@ -1,16 +1,17 @@
+import { formatDistanceToNow, parseISO } from "date-fns";
 
-export function formatTime(iso:string){
+export function formatTime(iso: string) {
 
-  const d = new Date(iso);
 
-  return d.toLocaleTimeString([],{
-    hour:"2-digit",
-    minute:"2-digit"
-  });
+
+  return formatDistanceToNow(
+    parseISO((iso)
+
+    ), { addSuffix: true })
 
 }
 
-export function formatDateLabel(iso:string){
+export function formatDateLabel(iso: string) {
 
   const d = new Date(iso);
 
@@ -18,18 +19,18 @@ export function formatDateLabel(iso:string){
 
   const y = new Date();
 
-  y.setDate(now.getDate()-1);
+  y.setDate(now.getDate() - 1);
 
-  if(d.toDateString()===now.toDateString())
+  if (d.toDateString() === now.toDateString())
     return "Today";
 
-  if(d.toDateString()===y.toDateString())
+  if (d.toDateString() === y.toDateString())
     return "Yesterday";
 
-  return d.toLocaleDateString([],{
-    weekday:"long",
-    month:"long",
-    day:"numeric"
+  return d.toLocaleDateString([], {
+    weekday: "long",
+    month: "long",
+    day: "numeric"
   });
 
 }

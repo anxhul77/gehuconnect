@@ -1,9 +1,9 @@
 import { View, Text, Pressable } from 'react-native'
 import React from 'react'
 import { Fontisto, Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
 
-export default function CommunityHeadBar({ name, onClick }: { name: any, onClick: () => void }) {
+
+export default function CommunityHeadBar({ name, onClick, onEventClick }: { name: any, onClick: () => void, onEventClick?: () => void }) {
 
 
   return (
@@ -22,6 +22,9 @@ export default function CommunityHeadBar({ name, onClick }: { name: any, onClick
         </Pressable>
         <Pressable className="bg-[#1F1F1F] flex rounded-full justify-center items-center p-1 w-10 h-10">
           <MaterialIcons name="person-add-alt-1" size={20} color="#999" />
+        </Pressable>
+        <Pressable className="bg-[#1F1F1F] flex rounded-full justify-center items-center p-1 w-10 h-10" onPress={onEventClick}>
+          <MaterialIcons name="event" size={20} color="#999" />
         </Pressable>
       </View>
     </View>

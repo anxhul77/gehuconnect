@@ -113,9 +113,9 @@ export default function MessageList({
         case "system":     layout.size = 42;  break;
         default:           layout.size = 72;
       }
-      // Grouped messages are shorter (no header row)
+  
       if (item.isGrouped) layout.size = Math.max(layout.size - 14, 32);
-      // Messages with attachments need more space
+      
       if (item.attachments && item.attachments.length > 0) {
         layout.size = item.attachments.length === 1 ? 300 : 320;
       }
@@ -128,7 +128,7 @@ export default function MessageList({
       ref={listRef}
       data={messages}
       renderItem={renderItem}
-      inverted
+    
       keyExtractor={keyExtractor}
       getItemType={getItemType}
       overrideItemLayout={overrideLayout}

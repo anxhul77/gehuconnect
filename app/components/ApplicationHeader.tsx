@@ -69,7 +69,7 @@ function ApplicationHeader() {
             </View>
           </Pressable>
 
-          <Pressable style={{ marginHorizontal: 6 }} onPress={() => router.push('/profile')}>
+          <Pressable style={{ marginHorizontal: 6 }} onPress={() => router.push('/components/TesstComponent')}>
             <View style={styles.iconBox}>
               <Ionicons name="person-outline" size={24} color="#999" />
             </View>

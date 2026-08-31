@@ -1,3 +1,4 @@
+
 import { MaterialIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -38,6 +39,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({
       },
     });
   }
+
   return (
     <Pressable onPress={() => handleCommunnityPress()}
       style={[styles.cardContainer, isGrid && { width: '48.5%' }]}

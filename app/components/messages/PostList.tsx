@@ -2,8 +2,8 @@ import React, { useCallback, useState } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 
-import { useGetCommunityPostsQuery } from "@/src/features/community.api";
-import Feedpostcard from "../Feedpostcard";
+import { useGetCommunityPostsQuery } from "@/src/features/community/community.api";
+import Feedpostcard from "../CommunityPosts/Feedpostcard";
 
 const PAGE_LIMIT = "10";
 

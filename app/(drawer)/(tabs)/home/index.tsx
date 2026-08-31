@@ -1,12 +1,33 @@
 import { View, Text } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useState, useCallback } from "react";
-import Feedpostcard from "../../../components/Feedpostcard";
+import { useState, useCallback, useRef } from "react";
+import Feedpostcard from "../../../components/CommunityPosts/Feedpostcard";
 import ApplicationHeader from "../../../components/ApplicationHeader";
 import { useGetFeedPostsQuery } from "@/src/features/feed.api";
 
-const LIMIT = "10";
+import { BottomSheetHandle, BottomSheetModal } from "@gorhom/bottom-sheet";
 
+
+
+const LIMIT = "10";
+const modalConfig = {
+  threedot: {
+    snapPoints: ["25%"],
+    enablePanDownToClose: true,
+    handleComponent: null,
+  },
+  share: {
+    snapPoints: ["35%"],
+    enablePanDownToClose: true,
+    handleComponent: null,
+  },
+  comment: {
+    snapPoints: ["85%"],
+    keyboardBehavior: "interactive",
+    enablePanDownToClose: false,
+    handleComponent: BottomSheetHandle,
+  },
+};
 export default function Index() {
   const [cursor, setCursor] = useState("");
 
@@ -22,7 +43,6 @@ export default function Index() {
       refetchOnMountOrArgChange: true,
     }
   );
-
 
   const posts = data?.communityPosts ?? [];
 
@@ -80,6 +100,7 @@ export default function Index() {
         onEndReachedThreshold={0.5}
         ListFooterComponent={ListFooter}
       />
+
     </View>
   );
 }

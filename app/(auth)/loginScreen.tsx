@@ -18,7 +18,6 @@ import {
 
 const { width, height } = Dimensions.get('window');
 
-// ─── Regex Validators ────────────────────────────────────────────────────────
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=\[\]{}|;:'",.<>\/`~\\])[A-Za-z\d@$!%*?&#^()_+\-=\[\]{}|;:'",.<>\/`~\\]{8,}$/;
 
@@ -117,25 +116,25 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
-       
+
           <View style={styles.logoWrap}>
 
             <View style={styles.logoCircle}>
-              <Image   source={require("../../assets/images/geuconnectlogotransparent.png")}
-                    contentFit="cover"
-                    transition={200}
-                    
-                    style={{
-                      width: "100%",
-                      aspectRatio:9/4
-                    }}
-                    />
+              <Image source={require("../../assets/images/geuconnectlogotransparent.png")}
+                contentFit="cover"
+                transition={200}
+
+                style={{
+                  width: "100%",
+                  aspectRatio: 9 / 4
+                }}
+              />
             </View>
-          
-           <Text style={styles.appTagline}>
+
+            <Text style={styles.appTagline}>
               Your campus · Your community · Your marketplace
             </Text>
-         </View>
+          </View>
 
           {/* ── Card ── */}
           <Animated.View
@@ -153,7 +152,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   { borderColor: getInputBorderColor('email') },
                 ]}
               >
-               <FontAwesome name="at" size={18} color="white" />
+                <FontAwesome name="at" size={18} color="white" />
                 <TextInput
                   style={styles.input}
                   placeholder="you@college.edu"
@@ -265,7 +264,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </View>
 
           {/* ── Stats Strip ── */}
-         
+
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -327,17 +326,17 @@ const styles = StyleSheet.create({
 
   // Logo
   logoWrap: {
-   
+
     alignItems: 'center',
-   
+
   },
   logoCircle: {
-   
+
     borderRadius: 36,
-    
+
     alignItems: 'center',
     justifyContent: 'center',
-   
+
   },
   logoIcon: { fontSize: 34 },
   appName: {
@@ -351,12 +350,12 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 4,
     textAlign: 'center',
-    alignSelf:"flex-end"
+    alignSelf: "flex-end"
   },
 
   // Card
   card: {
-    marginTop:20,
+    marginTop: 20,
     backgroundColor: COLORS.card,
     borderRadius: 24,
     padding: 24,
@@ -392,7 +391,7 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     flexDirection: 'row',
-    gap:"5",
+    gap: "5",
     alignItems: 'center',
     backgroundColor: '#1A1A1A',
     borderRadius: 14,
@@ -422,7 +421,7 @@ const styles = StyleSheet.create({
 
   // Login Button
   loginBtn: {
-    backgroundColor:"#EF5B3B",
+    backgroundColor: "#EF5B3B",
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
@@ -469,7 +468,7 @@ const styles = StyleSheet.create({
 
   // Footer
   footer: {
-    
+
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,

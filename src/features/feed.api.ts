@@ -1,11 +1,13 @@
+
 import { api } from "../store/api";
 import { CommunityPostsRes, FeedType } from "../types/types";
+import { buildCommunityPost } from "../utils/CommuityPostUtil";
 
 
 export const feedApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getFeedPosts: builder.query<
-      CommunityPostsRes,
+      CommunityPostsRes & { postIndexMap: Record<number, number> },
       { feedtype: FeedType; cursor: string; keyword: string; courseId: string; limit: string }
     >({
       query: ({ feedtype, cursor, keyword, courseId, limit }) => ({
@@ -13,13 +15,22 @@ export const feedApi = api.injectEndpoints({
         method: "GET",
         params: { feedType: feedtype, cursor, keyword, courseId, limit }
       }),
+      transformResponse: (response: CommunityPostsRes) => buildCommunityPost(response),
 
       serializeQueryArgs: ({ endpointName }) => {
         return endpointName;
       },
 
       merge: (currentCache, newItems) => {
-        currentCache.communityPosts.push(...newItems.communityPosts);
+
+        for (const post of newItems.communityPosts) {
+
+          currentCache.postIndexMap[post.postId] =
+            currentCache.communityPosts.length;
+
+          currentCache.communityPosts.push(post);
+        }
+
         currentCache.nextCursor = newItems.nextCursor;
         currentCache.hasNext = newItems.hasNext;
       },

@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ActivityIndicator } from "react-native"
 import React from "react"
-import { useGetCommunityRailQuery } from "@/src/features/community.api"
+import { useGetCommunityRailQuery } from "@/src/features/community/community.api"
 import { Image } from "expo-image"
 import { useRouter } from "expo-router"
 

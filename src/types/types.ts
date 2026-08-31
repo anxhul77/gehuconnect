@@ -101,18 +101,16 @@ export interface Communities {
   description: string
   bgImageUrl: string
 }
-export interface Community {
-  id: string
-  communityName: string
-  description: string
-  owner: {
-    id: string,
-    name: string,
-    email: string,
-    avatarUrl: string,
-    role: string
-  },
-  channelCategories: any
+export interface CommunitySideBarDto {
+  type: string
+  categoryId: string
+  categoryName: string
+  categoryPosition: number
+  channelPosition: number
+  description?: string
+  channelId: string
+  channelName: string
+  channelType: string
 
 }
 export interface Category {
@@ -214,14 +212,21 @@ export interface AuthorDto {
 
 }
 export interface CommunityPost {
-  postId: string
+  postId: number,
   author: string
+  communityName: string
   title: string
   content: string
-  statsDto: string
-  likeCount: string
-  commentCount: string
-  shareCount: string
+  statsDto: {
+    comments: number
+    likes: number
+    shares: number
+
+  }
+  communityId: number
+  likeCount: number
+
+  shareCount: number
   tags: string[]
   attachments: PostAttachmets
   liked: boolean
@@ -237,32 +242,46 @@ export enum CommentSortType {
   LATEST = "LATEST",
 
   TOP = "TOP",
+
 }
+export type OptimisticReply = CommentResponseDto & {
+  tempId: number;
+  parentId: number;
+};
 export interface ChannelCategoryDto {
   id: string
   name: string
+  channelCategoryType: 'TEXT' | 'VOICE' | 'FEED'
 }
-export interface CommentResponseDto {
+export type CommentResponseDto = {
   commentId: number;
   content: string;
+  parentId: number | null;
   likeCount: number;
   liked: boolean;
   disliked: boolean;
-  replyCount?: number;
+  depth: number;
+  replyCursor: string | null;
+  replyCount: number;
   author?: AuthorDto;
-  isSending?: boolean;
+  dislikeCount: number;
+  isSending?: boolean
+  createdAt: string;
+  replyHasNext: boolean;
+  showLoadMore: boolean;
+  loadMoreCursor: string | null;
+  isOptimistic?: boolean;
+  clientId: string;
+  failed?: boolean;
+  timeAgo: string;
+
+  isLastSibling: boolean;
+
+  ancestorHasNext: boolean[];
+
+
 }
 
-export interface NestedCommentResponse {
-  commentId: number;
-  content: string;
-  likeCount: number;
-  liked: boolean;
-  disliked: boolean;
-  author?: AuthorDto;
-  parentCommentId?: number;
-  isSending?: boolean;
-}
 
 export interface PostCommentResponse {
   comments: CommentResponseDto[];
@@ -273,9 +292,10 @@ export interface PostCommentResponse {
 
 export interface CommentDto {
   author?: AuthorDto;
-  content?: string;
-  parentCommentId?: string;
-  postId?: string;
+  content: string;
+  parentCommentId: number | null;
+  postId: number;
+  clientId: string;
 }
 
 export enum CommunitySortType {
@@ -285,7 +305,58 @@ export enum CommunitySortType {
   TIMEDESC = "TIMEDESC",
   SCORE = "SCORE",
 }
+export interface RoleCardDto {
+  roleId: number;
+  roleName: string;
+  isSystemRole: number;
+  roleColor: string
+  isDefaultRole: boolean
+}
+export interface CommunityRoleDto {
+  displaySeparately: boolean;
+  allowMentioning: boolean;
+  permissions: string[];
+  permissionsMask: string;
+  roleId: number;
+  roleName: string;
+  isSystemRole: number;
+  roleColor: string;
+}
 
+export enum CommunityMemberStatus {
+  ACTIVE = "ACTIVE",
+  BANNED = "BANNED",
+  PENDING = "PENDING",
+}
+
+export interface CommunityMemberRoleDto {
+  id: number;
+  name: string;
+}
+
+export interface CommunityMemberDto {
+  id: number;
+  name: string;
+  avatarUrl: string;
+  userId: number;
+  status: CommunityMemberStatus;
+  joinedAt: string;
+  roles: CommunityMemberRoleDto[];
+}
+
+export interface CommunityAuditLogDto {
+  id: number;
+  action: string;
+  message: string;
+  reason: string;
+  targetType: string;
+  actorId: number;
+  actorName: string;
+  targetId: number;
+  targetName: string;
+  metadata: string;
+  createdAt: string;
+}
 export interface CommunityCardDto {
   communityId: number;
   communityName: string;
@@ -352,13 +423,71 @@ export interface ErpUserData {
   abcAccountNo: string;
   photo: string;
 }
-export interface CommunityResposneDto {
+export interface CommunityResponseDto {
   id: number,
   name: string,
   avatarUrl: string,
 }
 export interface CommunityRailResponse {
-  communities: CommunityResposneDto[],
+  communities: CommunityResponseDto[],
   cursor: string,
   hasNext: boolean
 }
+export enum CommentReactionType {
+  LIKE = "LIKE",
+  DISLIKE = "DISLIKE"
+}
+
+export interface EventSettingDto {
+  permissionMask: string;
+
+  remainderDuration: number;
+  maximumParticipants: number;
+}
+
+export interface FeedSettingDto {
+  permissionMask: string;
+
+  maximumPostLength: number;
+}
+
+export interface ModerationSettingDto {
+  verificationLevel: 'None' | 'Low' | 'Medium' | 'High'
+  permissionMask: string;
+  maximumAccountAgeDays: number;
+}
+export type ReorderType = "CATEGORY" | "CHANNEL";
+
+export interface ReorderChannelDto {
+  categoryId?: string;
+  categoryPosition?: number;
+  channelId?: string;
+  channelPosition?: number;
+}
+export interface CreateInviteRequest {
+  expiresInHours?: number;
+  maxUses?: number;
+}
+
+export interface InviteResponse {
+  inviteId: string;
+  inviteUrl: string;
+  expiresAt: number;
+  maxUses: number;
+  uses: number;
+}
+export type SubsectionType = "PQYS" | "ASSIGNMENT" | "SYLLABUS" | "NOTES" | "LABMANUAL";
+
+export interface SubsectionDto {
+  id: string;
+  subsectionType?: SubsectionType;
+  count?: number
+}
+
+export interface CursorPageResponse<T> {
+  content: T[];
+
+  nextCursor?: string;
+  hasNext?: boolean;
+}
+

@@ -16,10 +16,10 @@ import Feather from "react-native-vector-icons/Feather";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { useGetCommunityPostsQuery, useGetCommunityProfileQuery } from "@/src/features/community.api";
+import { useGetCommunityPostsQuery, useGetCommunityProfileQuery } from "@/src/features/community/community.api";
 import { CommunityPostsRes } from "@/src/types/types";
 import { FlashList } from "@shopify/flash-list";
-import Feedpostcard from "../Feedpostcard";
+import Feedpostcard from "../CommunityPosts/Feedpostcard";
 
 const { width } = Dimensions.get("window");
 

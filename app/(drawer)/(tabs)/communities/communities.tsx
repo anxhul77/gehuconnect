@@ -13,7 +13,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import CommunityCard from "../../../components/community/CommunityCard";
 import { useRouter } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
-import { useGetCommunitiesQuery } from "@/src/features/community.api";
+import { useGetCommunitiesQuery } from "@/src/features/community/community.api";
 import { CommunityCardDto, CommunitySortType } from "@/src/types/types";
 
 export default function Communities() {

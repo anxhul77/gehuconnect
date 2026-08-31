@@ -7,11 +7,11 @@ import { useRouter } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
 
 import { useGetFeedPostsQuery } from '@/src/features/feed.api'
-import { useGetCommunitiesQuery } from '@/src/features/community.api'
+import { useGetCommunitiesQuery } from '@/src/features/community/community.api'
 import { useGetProductsQuery } from '@/src/features/marketplace.api'
 import { CommunitySortType, CommunityCardDto, ProductCardResponse, CommunityPost } from '@/src/types/types'
 
-import Feedpostcard from '@/app/components/Feedpostcard'
+import Feedpostcard from '@/app/components/CommunityPosts/Feedpostcard'
 import ItemCard from '@/app/components/marketplace/ItemCard'
 import CommunityCard from '@/app/components/community/CommunityCard'
 

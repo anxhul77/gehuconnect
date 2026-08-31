@@ -1,60 +1,74 @@
-import { View, Text, ActivityIndicator } from "react-native";
-import React, { useState, useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FlatList } from "react-native-gesture-handler";
 
 import CommunityLogo from "@/app/components/community/CommunityLogo";
 import CommunityHeadBar from "@/app/components/community/CommunityHeadBar";
 import ChannelCategory from "@/app/components/channel/ChannelCategory";
-import { useGetCommunityQuery, useGetCommunityRailQuery } from "@/src/features/community.api";
+import { useGetCommunityRailQuery, useGetCommunitySideBarQuery } from "@/src/features/community/community.api";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { CommunityResposneDto } from "@/src/types/types";
-import { Fontisto } from "@expo/vector-icons";
+import { CommunityResponseDto, CommunitySideBarDto } from "@/src/types/types";
+import { useBottomSheet } from "@/app/contexts/BottomSheetContext";
+import EventBottomSheetContent from "@/app/components/community/EventBottomSheetContent";
+import { FlashList } from "@shopify/flash-list";
+import buildVisibleItems, { toggleCategory } from "@/src/utils/CommunityUtils";
+import ChannelCard from "@/app/components/channel/ChannelCard";
 
 export default function Index() {
   const { communityId } = useLocalSearchParams();
-
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(
-    (communityId as string) || null
-  );
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined)
-  const [communitiesList, setCommunitiesList] = useState<CommunityResposneDto[]>([]);
+  const [collaspedSet, setCollaspedSet] = useState<Set<string>>(new Set());
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-
+  const [communityIds, setCommunityIds] = useState<string[]>([]);
+  const [communityEntities, setCommunityEntities] = useState<
+    Record<string, CommunityResponseDto>
+  >({});
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | undefined>(communityId as string);
   const {
     data: communitiesData,
     isLoading: isCommunitiesLoading,
     isFetching: isCommunitiesFetching,
-    error: communitiesError
-  } = useGetCommunityRailQuery({ limit: 16, cursor });
 
+  } = useGetCommunityRailQuery({ limit: 50, cursor });
+  console.log("communitiesData", communitiesData);
   useEffect(() => {
-    if (communitiesData?.communities) {
-      setCommunitiesList((prev) => {
-        const newComms = communitiesData.communities.filter(
-          (c) => !prev.find((p) => p.id === c.id)
-        );
-        return [...prev, ...newComms];
-      });
+    if (!communitiesData) return;
 
-      if (!selectedCommunityId && communitiesData.communities.length > 0) {
-        setSelectedCommunityId(String(communitiesData.communities[0].id));
-      }
-    }
-  }, [communitiesData, selectedCommunityId]);
+    setCommunityEntities(prev => ({
+      ...prev,
+      ...communitiesData.entities,
+    }));
 
-  const loadMore = () => {
-    if (communitiesData?.hasNext && !isCommunitiesFetching) {
-      setCursor(communitiesData.cursor);
-    }
-  };
+    setCommunityIds(prev => {
+      const seen = new Set(prev);
+
+      const newIds = communitiesData.ids.filter(id => !seen.has(id));
+
+      return [...prev, ...newIds];
+    });
+  }, [communitiesData]);
 
   const {
-    data: Community,
+    data: communitySideBar,
     isLoading: isCommunityLoading,
     error: communityError
-  } = useGetCommunityQuery(selectedCommunityId as string, { skip: !selectedCommunityId });
-
+  } = useGetCommunitySideBarQuery(selectedCommunityId as string, { skip: !selectedCommunityId });
+  const visibleCategories: CommunitySideBarDto[] = useMemo<CommunitySideBarDto[]>(() => {
+    return buildVisibleItems(collaspedSet, communitySideBar)
+  }, [collaspedSet, communitySideBar]);
+  const handleOnChannelPress = useCallback((item: any) => {
+    router.push({
+      pathname: `/channels/${item?.channelId}`,
+      params: { name: item?.channelName, communityId: communityId }
+    }
+    )
+  }, [])
+  function toggleCollapse(categoryId: string) {
+    toggleCategory(categoryId, setCollaspedSet)
+  }
+  const renderItem = useCallback(({ item }: { item: CommunitySideBarDto }) => { return item.type === "CATEGORY" ? <ChannelCategory items={item} onToggle={toggleCollapse} collaspedSet={collaspedSet} /> : <ChannelCard item={item} communityId={communityId as string} handleOnChannelPress={handleOnChannelPress} ></ChannelCard> }
+    ,
+    [collaspedSet, communitySideBar])
   const renderLoader = () => (
     <View className="justify-center items-center py-4">
       {communitiesData?.hasNext && isCommunitiesFetching && (
@@ -68,48 +82,54 @@ export default function Index() {
     router.push({
       pathname: "/(drawer)/(tabs)/communities/profile/[communityProfileId]",
       params: {
-        communityProfileId: String(Community?.id),
-        name: Community?.communityName,
-        avatar: avatarUrl,
+        communityProfileId: selectedCommunityId as string,
+        name: communityEntities[selectedCommunityId as string]?.name,
+        avatar: communityEntities[selectedCommunityId as string]?.avatarUrl,
         isJoined: "true"
 
       },
     });
   }
+
+  const { openActionSheet, closeActionSheet } = useBottomSheet();
+  function handleEventClick() {
+    openActionSheet({ content: () => <EventBottomSheetContent communityId={selectedCommunityId as string} closeActionSheet={closeActionSheet} />, snapPoints: ["40%"], enablePanDownToClose: true, handleComponent: null, color: "transparent", enableContentPanningGesture: true, onDismiss: () => closeActionSheet() });
+  }
+
   return (
     <SafeAreaView className="flex-1 flex-row bg-black">
       <View className="pt-32" style={{ width: 80 }}>
-        <FlatList
-          data={communitiesList}
-          keyExtractor={(item) => item.id.toString()}
+        <FlashList
+          data={communityIds}
+          keyExtractor={(item) => item}
           renderItem={({ item }) => (
             <CommunityLogo
-              imageUrl={item.avatarUrl}
-              isSelected={selectedCommunityId === String(item.id)}
+              imageUrl={communityEntities[item]?.avatarUrl}
+              isSelected={selectedCommunityId === item}
               onPress={() => {
-                setSelectedCommunityId(String(item.id));
-                setAvatarUrl(item.avatarUrl)
+                setSelectedCommunityId(item);
+
               }}
             />
           )}
           showsVerticalScrollIndicator={false}
-          onEndReached={loadMore}
+
           onEndReachedThreshold={0.5}
           ListFooterComponent={renderLoader}
         />
       </View>
 
       <View className="flex-1 border bg-zinc-800/50 rounded-tl-3xl h-screen overflow-hidden">
-        <CommunityHeadBar name={Community?.communityName} onClick={handleHeaderPress} />
+        <CommunityHeadBar name={communityEntities[selectedCommunityId as string]?.name} onClick={handleHeaderPress} onEventClick={handleEventClick} />
 
         {isCommunityLoading ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#3b82f6" />
           </View>
         ) : (
-          <FlatList
-            data={Community?.channelCategories}
-            renderItem={(item) => <ChannelCategory items={item} communityId={Community?.id} />}
+          <FlashList<CommunitySideBarDto>
+            data={visibleCategories}
+            renderItem={renderItem}
             keyExtractor={(item, index) => index.toString()}
             showsVerticalScrollIndicator={false}
           />

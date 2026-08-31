@@ -18,6 +18,7 @@ import {
   View,
   ScrollView,
 } from "react-native";
+import { Image } from "expo-image";
 
 const HEADER_HEIGHT = 150;
 
@@ -63,10 +64,11 @@ export default function Marketplace() {
     [selectedCategory, debouncedSearch, sort]
   );
 
-  const { data: categories, isLoading: categoryLoading } = useGetCategoriesQuery();
+  const { data: categories, isLoading: categoryLoading, isError: categoryError } = useGetCategoriesQuery();
 
-  const { data: products, isLoading: productsLoading } =
+  const { data: products, isLoading: productsLoading, isError: productError } =
     useGetProductsQuery(queryParams);
+  console.log(productsLoading, productError)
 
   return (
     <View style={{ flex: 1, backgroundColor: "black" }}>
@@ -75,86 +77,96 @@ export default function Marketplace() {
       >
         <CampusCommerceHeader headerHeight={HEADER_HEIGHT} />
       </Animated.View>
+      {categoryError || productError ? <View className="flex-1 justify-center items-center">
+        <Image
+          source={require("../../../assets/images/500error.png")}
+          contentFit="cover"
+          transition={200}
+          style={{ width: "100%", aspectRatio: 9 / 9, paddingHorizontal: 12, borderRadius: 10 }}
+        />
 
-      <Animated.FlatList
-        as={FlashList}
-        data={productsLoading ? [...Array(6)] : products?.products}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 12 }}
-        keyExtractor={(item, index) =>
-          productsLoading ? index.toString() : item.productId.toString()
-        }
-        contentContainerStyle={{
-          paddingTop: HEADER_HEIGHT + 10,
-          paddingBottom: 100,
-          paddingHorizontal: 16,
-          gap: 20,
-        }}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-        estimatedItemSize={200}
-        renderItem={({ item }) =>
-          productsLoading ? <ItemCardLoader /> : <ItemCard item={item} />
-        }
-        ListHeaderComponent={
-          <>
-            <View
-              style={styles.searchBox}
-              className="bg-[#1A1A1A] border border-[#2A2A2A]"
-            >
-              <Ionicons name="search" size={20} color="#B3B3B3" />
+      </View> :
 
-              <TextInput
-                placeholder="Search products..."
-                placeholderTextColor="#B3B3B3"
-                style={styles.searchInput}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
 
-              {searchQuery.length > 0 && (
-                <Pressable onPress={() => setSearchQuery("")}>
-                  <Ionicons name="close-circle" size={20} color="#71717a" />
-                </Pressable>
-              )}
-            </View>
-            <View className="flex-row h-12">
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: 32, paddingHorizontal: 16 }}
+        <Animated.FlatList
+          as={FlashList}
+          data={productsLoading ? [...Array(6)] : products?.products}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 12 }}
+          keyExtractor={(item, index) =>
+            productsLoading ? index.toString() : item.productId.toString()
+          }
+          contentContainerStyle={{
+            paddingTop: HEADER_HEIGHT + 10,
+            paddingBottom: 100,
+            paddingHorizontal: 16,
+            gap: 20,
+          }}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          estimatedItemSize={200}
+          renderItem={({ item }) =>
+            productsLoading ? <ItemCardLoader /> : <ItemCard item={item} />
+          }
+          ListHeaderComponent={
+            <>
+              <View
+                style={styles.searchBox}
+                className="bg-[#1A1A1A] border border-[#2A2A2A]"
               >
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  {!categoryLoading && <CategoryCard
-                    item={{
-                      categoryId: null,
-                      categoryName: "All",
-                    }}
-                    selectedCategory={selectedCategory}
-                    setSelectedCategory={setSelectedCategory}
-                  />}
+                <Ionicons name="search" size={20} color="#B3B3B3" />
 
-                  {!categoryLoading ? categories?.content?.map((item) => (
-                    <CategoryCard
-                      key={item.categoryId}
-                      item={item}
+                <TextInput
+                  placeholder="Search products..."
+                  placeholderTextColor="#B3B3B3"
+                  style={styles.searchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+
+                {searchQuery.length > 0 && (
+                  <Pressable onPress={() => setSearchQuery("")}>
+                    <Ionicons name="close-circle" size={20} color="#71717a" />
+                  </Pressable>
+                )}
+              </View>
+              <View className="flex-row h-12">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={{ marginHorizontal: 32, paddingHorizontal: 16 }}
+                >
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {!categoryLoading && <CategoryCard
+                      item={{
+                        categoryId: null,
+                        categoryName: "All",
+                      }}
                       selectedCategory={selectedCategory}
                       setSelectedCategory={setSelectedCategory}
-                    />
-                  )) : <>
-                    {[...Array(3)].map((_, idx) => (<CategoryCardLoader key={idx}></CategoryCardLoader>))}
-                  </>}
-                </View>
-              </ScrollView>
+                    />}
 
-              <FIlterCard sort={sort} onSortChange={setSort} />
-            </View>
-          </>
-        }
-      />
+                    {!categoryLoading ? categories?.content?.map((item) => (
+                      <CategoryCard
+                        key={item.categoryId}
+                        item={item}
+                        selectedCategory={selectedCategory}
+                        setSelectedCategory={setSelectedCategory}
+                      />
+                    )) : <>
+                      {[...Array(3)].map((_, idx) => (<CategoryCardLoader key={idx}></CategoryCardLoader>))}
+                    </>}
+                  </View>
+                </ScrollView>
+
+                <FIlterCard sort={sort} onSortChange={setSort} />
+              </View>
+            </>
+          }
+        />}
     </View>
   );
 }

@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { uploadToR2 } from '@/src/utils/UploadToR2';
 import { useGetPresignedForProductsMutation } from '@/src/features/media.api';
-import { useCreateCommunityMutation } from '@/src/features/community.api';
+import { useCreateCommunityMutation } from '@/src/features/community/community.api';
 import Toast from 'react-native-toast-message';
 
 export default function CreateCommunityPage() {
@@ -188,9 +188,8 @@ export default function CreateCommunityPage() {
           <Pressable
             disabled={!canPublish || btnLoader}
             onPress={handlePublish}
-            className={`flex-row items-center gap-1.5 px-4 py-2 rounded-full border ${
-              canPublish ? 'bg-[#1DB954] border-[#1DB954]' : 'bg-[#242424] border-[#2A2A2A]'
-            }`}
+            className={`flex-row items-center gap-1.5 px-4 py-2 rounded-full border ${canPublish ? 'bg-[#1DB954] border-[#1DB954]' : 'bg-[#242424] border-[#2A2A2A]'
+              }`}
           >
             {btnLoader ? (
               <ActivityIndicator size="small" color={canPublish ? '#000' : '#535353'} />
@@ -242,7 +241,7 @@ export default function CreateCommunityPage() {
                   <>
                     <Image source={{ uri: avatarUrl }} className="w-full h-full" resizeMode="cover" />
                     <View className="absolute inset-0 bg-black/40 items-center justify-center">
-                       <Ionicons name="camera" size={24} color="#fff" />
+                      <Ionicons name="camera" size={24} color="#fff" />
                     </View>
                   </>
                 ) : (
@@ -265,7 +264,7 @@ export default function CreateCommunityPage() {
                   <>
                     <Image source={{ uri: bannerUrl }} className="w-full h-full" resizeMode="cover" />
                     <View className="absolute inset-0 bg-black/40 items-center justify-center">
-                       <Ionicons name="camera" size={24} color="#fff" />
+                      <Ionicons name="camera" size={24} color="#fff" />
                     </View>
                   </>
                 ) : (
@@ -327,7 +326,7 @@ export default function CreateCommunityPage() {
         <View className="h-px bg-[#2A2A2A] mx-5 my-5" />
 
         {/* Tags Block */}
-        <View 
+        <View
           className="px-5"
           onLayout={(e) => { tagSectionY.current = e.nativeEvent.layout.y; }}
         >

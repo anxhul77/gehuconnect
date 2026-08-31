@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
- 
+
   ScrollView,
   Image,
   Alert,
@@ -26,7 +26,7 @@ import {
 } from "@/src/types/Attachment.types";
 import { useGetCoursesQuery } from "@/src/features/acadmecis.api";
 import { useLocalSearchParams } from "expo-router";
-import { useAddCommunityPostMutation } from "@/src/features/community.api";
+import { useAddCommunityPostMutation } from "@/src/features/community/community.api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface FormErrors {
@@ -65,7 +65,7 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function CreatePostScreen({ navigation }: any) {
   // ── Media mode toggle ────────────────────────────────────────────────────
   const [mediaMode, setMediaMode] = useState<"photos" | "video">("photos");
-  const params=useLocalSearchParams()
+  const params = useLocalSearchParams()
   // ── Text fields ──────────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -83,14 +83,14 @@ export default function CreatePostScreen({ navigation }: any) {
   const scrollViewRef = useRef<ScrollView>(null);
   const tagSearchRef = useRef<TextInput>(null);
   const tagSectionY = useRef<number>(0);
- 
+
   // ── Attachment upload hook (same as Channel.tsx) ──────────────────────────
   // channelId is not relevant for posts — pass a constant key so the hook
   // has a stable upload scope. Swap "community-post" for your post channel id
   // if your R2 upload path is channelId-scoped.
-  
-   const channelId = Array.isArray(params?.channelId) ? params.channelId[0] : params?.channelId || "";
-    const communityId = Array.isArray(params?.communityId) ? params.communityId[0] : params?.communityId || "";
+
+  const channelId = Array.isArray(params?.channelId) ? params.channelId[0] : params?.channelId || "";
+  const communityId = Array.isArray(params?.communityId) ? params.communityId[0] : params?.communityId || "";
   const {
     attachments,
     addAttachments,
@@ -114,13 +114,13 @@ export default function CreatePostScreen({ navigation }: any) {
     { keyword: debouncedKeyword, limit: PAGE_LIMIT, cursor },
     { refetchOnMountOrArgChange: true }
   );
-const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
- console.log("posterror",error)
+  const [addCommunityPost, { isLoading, error }] = useAddCommunityPostMutation();
+  console.log("posterror", error)
   const courseList: Course[] = (coursesData as any)?.course ?? [];
   const nextCursor: string = (coursesData as any)?.cursor ?? "";
   const hasNext: boolean = (coursesData as any)?.hasNext ?? false;
 
-  // ── Progress ─────────────────────────────────────────────────────────────
+
   const hasMedia =
     mediaMode === "photos" ? photoAttachments.length > 0 : videoAttachment !== null;
 
@@ -251,7 +251,7 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
     return Object.keys(newErrors).length === 0;
   };
 
-  const tags:string[] =["hellow"]
+  const tags: string[] = ["hellow"]
   // ── Publish ──────────────────────────────────────────────────────────────
   const handlePublish = async () => {
     if (!validate()) return;
@@ -263,7 +263,7 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
     }
 
     setPublishing(true);
-   
+
     const payload = {
       title: title.trim(),
       channelId: channelId,
@@ -275,15 +275,16 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
     };
     console.log("Post payload:", payload);
     // TODO: swap with your actual post mutation
-    try{
-     const {data}=await addCommunityPost(payload);
-     
-    setPublishing(false);
-    clearAttachments();
-    Alert.alert("Published!", "Your post has been shared with the community.", [
-      { text: "OK", onPress: () => navigation?.goBack() },
-    ]);}catch(e){
-        console.log(e)
+    try {
+      const { data } = await addCommunityPost(payload);
+
+      setPublishing(false);
+      clearAttachments();
+      Alert.alert("Published!", "Your post has been shared with the community.", [
+        { text: "OK", onPress: () => navigation?.goBack() },
+      ]);
+    } catch (e) {
+      console.log(e)
     }
   };
 
@@ -326,9 +327,8 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
         <Pressable
           disabled={!isReady || publishing}
           onPress={handlePublish}
-          className={`flex-row items-center gap-1.5 px-4 py-2 rounded-full border ${
-            isReady ? "bg-[#1ed760] border-[#1ed760]" : "bg-white/5 border-white/15"
-          }`}
+          className={`flex-row items-center gap-1.5 px-4 py-2 rounded-full border ${isReady ? "bg-[#1ed760] border-[#1ed760]" : "bg-white/5 border-white/15"
+            }`}
         >
           {publishing || isUploading ? (
             <ActivityIndicator size="small" color={isReady ? "#000" : "rgba(255,255,255,0.3)"} />
@@ -377,16 +377,14 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
                   setMediaMode(mode);
                   setErrors((e) => ({ ...e, media: undefined }));
                 }}
-                className={`px-4 py-1.5 rounded-full border ${
-                  mediaMode === mode
-                    ? "bg-[#1ed760] border-[#1ed760]"
-                    : "bg-transparent border-white/15"
-                }`}
+                className={`px-4 py-1.5 rounded-full border ${mediaMode === mode
+                  ? "bg-[#1ed760] border-[#1ed760]"
+                  : "bg-transparent border-white/15"
+                  }`}
               >
                 <Text
-                  className={`text-xs font-medium capitalize ${
-                    mediaMode === mode ? "text-black" : "text-white/55"
-                  }`}
+                  className={`text-xs font-medium capitalize ${mediaMode === mode ? "text-black" : "text-white/55"
+                    }`}
                 >
                   {mode}
                 </Text>
@@ -550,9 +548,8 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
               placeholder="What's this post about?"
               placeholderTextColor="rgba(255,255,255,0.22)"
               maxLength={80}
-              className={`bg-white/[0.05] rounded-xl px-4 py-3 text-[15px] border ${
-                errors.title ? "border-red-500" : "border-white/12"
-              }`}
+              className={`bg-white/[0.05] rounded-xl px-4 py-3 text-[15px] border ${errors.title ? "border-red-500" : "border-white/12"
+                }`}
               style={{ color: "#f0f0f0" }}
             />
             {errors.title && (
@@ -578,9 +575,8 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
               multiline
               numberOfLines={5}
               textAlignVertical="top"
-              className={`bg-white/[0.05] rounded-xl px-4 py-3 text-[15px] border ${
-                errors.content ? "border-red-500" : "border-white/12"
-              }`}
+              className={`bg-white/[0.05] rounded-xl px-4 py-3 text-[15px] border ${errors.content ? "border-red-500" : "border-white/12"
+                }`}
               style={{ minHeight: 120, color: "#f0f0f0" }}
             />
             {errors.content && (
@@ -605,9 +601,8 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
 
           {/* Search input */}
           <View
-            className={`flex-row items-center bg-white/[0.05] rounded-xl border px-3 mb-3 ${
-              errors.tags ? "border-red-500" : "border-white/12"
-            }`}
+            className={`flex-row items-center bg-white/[0.05] rounded-xl border px-3 mb-3 ${errors.tags ? "border-red-500" : "border-white/12"
+              }`}
           >
             {coursesFetching ? (
               <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" style={{ width: 15, height: 15 }} />
@@ -689,9 +684,8 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
                     key={course.courseId}
                     onPress={() => toggleCourse(course)}
                     activeOpacity={0.7}
-                    className={`flex-row items-center justify-between px-4 py-3 rounded-xl border ${
-                      active ? "bg-[#1ed760]/10 border-[#1ed760]" : "bg-white/[0.03] border-white/10"
-                    }`}
+                    className={`flex-row items-center justify-between px-4 py-3 rounded-xl border ${active ? "bg-[#1ed760]/10 border-[#1ed760]" : "bg-white/[0.03] border-white/10"
+                      }`}
                   >
                     <Text
                       className={`text-sm font-medium flex-1 ${active ? "text-white" : "text-white/70"}`}
@@ -700,9 +694,8 @@ const [addCommunityPost,{isLoading,error}]=useAddCommunityPostMutation();
                       {course.courseName}
                     </Text>
                     <View
-                      className={`w-5 h-5 rounded-full items-center justify-center border ml-3 flex-shrink-0 ${
-                        active ? "bg-[#1ed760] border-[#1ed760]" : "border-white/20 bg-transparent"
-                      }`}
+                      className={`w-5 h-5 rounded-full items-center justify-center border ml-3 flex-shrink-0 ${active ? "bg-[#1ed760] border-[#1ed760]" : "border-white/20 bg-transparent"
+                        }`}
                     >
                       {active && <Ionicons name="checkmark" size={11} color="#000" />}
                     </View>

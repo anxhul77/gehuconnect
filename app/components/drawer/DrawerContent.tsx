@@ -38,7 +38,7 @@ export default function DrawerContent() {
 
         <Pressable
           className="flex-row items-center py-3 px-4 active:bg-white/10"
-          onPress={() => router.push('/(drawer)/(tabs)/profile')}
+          onPress={() => router.push('/profile')}
         >
           <AntDesign name="user" size={22} color="#fff" />
           <Text className="text-white ml-4 text-[15px] font-medium">Profile</Text>
@@ -46,7 +46,7 @@ export default function DrawerContent() {
 
         <Pressable
           className="flex-row items-center py-3 px-4 active:bg-white/10"
-          onPress={() => router.push('/offers')}
+          onPress={() => router.push('/marketplace/')}
         >
           <MaterialIcons name="local-offer" size={22} color="#fff" />
           <Text className="text-white ml-4 text-[15px] font-medium">Offers</Text>

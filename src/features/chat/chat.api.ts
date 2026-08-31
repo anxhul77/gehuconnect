@@ -65,17 +65,21 @@ export const chatApi = api.injectEndpoints({
         }
 
         const token = (getState() as any).auth?.accessToken;
-        if (!token) return;
+        if (!token) {
+          console.error(`${LOG_TAG} ❌ No token available — cannot connect socket`);
+          return;
+        }
 
+        console.log(`${LOG_TAG} 🔗 Connecting socket for channelId: ${channelId}`);
         connectChatSocket(token);
 
         const unsubscribe = subscribeTopic(
-          `/user/topic/channel/${channelId}`,
+          `/topic/channel/${channelId}`,
           (stompMessage) => {
             try {
+              console.log(`${LOG_TAG} ✓ Received message from /topic/channel/${channelId}:`, stompMessage);
               const data: SocketIncomingMessage = JSON.parse(stompMessage.body);
-
-              // Always normalise senderId to string
+              console.log(`${LOG_TAG} Parsed message data:`, data);
               const incomingSenderId = String(data.senderId ?? "");
 
               console.debug(

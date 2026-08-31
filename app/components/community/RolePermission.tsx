@@ -4,6 +4,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+
+import ContainerwithSwitch from '../Custom/ContainerwithSwitch'
+import CustomSwitch from '../Custom/CustomSwitch'
+
 interface PermissionConfig {
     manageServer: boolean;
     managePosts: boolean;
@@ -12,72 +16,6 @@ interface PermissionConfig {
     sendInvites: boolean;
 }
 
-function CustomSwitch({ value, onValueChange }: { value: boolean; onValueChange: (val: boolean) => void }) {
-    return (
-        <Pressable
-            onPress={() => onValueChange(!value)}
-            style={{
-                width: 46,
-                height: 24,
-                borderRadius: 12,
-                backgroundColor: value ? '#5865F2' : '#2E3035',
-                justifyContent: 'center',
-                padding: 0,
-                position: 'relative',
-                borderWidth: 1,
-                borderColor: value ? '#5865F2' : '#3F4248'
-            }}
-        >
-            <View
-                style={{
-                    width: 22,
-                    height: 20,
-                    borderRadius: 11,
-                    backgroundColor: '#FFFFFF',
-                    position: 'absolute',
-                    left: value ? 22 : 0,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 2,
-                    elevation: 2,
-                }}
-            />
-        </Pressable>
-    )
-}
-
-function PermissionRow({
-    title,
-    description,
-    value,
-    onValueChange
-}: {
-    title: string;
-    description: string;
-    value: boolean;
-    onValueChange: (val: boolean) => void
-}) {
-    return (
-        <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: '#131318',
-            paddingVertical: 14,
-            paddingHorizontal: 16,
-            borderRadius: 16,
-            marginBottom: 12,
-
-        }}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }}>{title}</Text>
-                <Text style={{ color: '#8F9199', fontSize: 13, marginTop: 4, lineHeight: 18 }}>{description}</Text>
-            </View>
-            <CustomSwitch value={value} onValueChange={onValueChange} />
-        </View>
-    )
-}
 
 export default function RolePermission() {
     const router = useRouter()
@@ -132,36 +70,43 @@ export default function RolePermission() {
             </View>
 
             <ScrollView className="flex bg-[#000000] px-3 mt-4" showsVerticalScrollIndicator={false}>
-                <PermissionRow
+                <ContainerwithSwitch
+                    backgroundColor="#131318"
                     title="Manage Server"
                     description={`Allow ${isModerator ? 'moderators' : 'regular users'} to customize community settings, status, or description.`}
-                    value={perms.manageServer}
-                    onValueChange={() => togglePerm('manageServer')}
+
+                    customSwitch={<CustomSwitch value={perms.manageServer} onValueChange={() => togglePerm('manageServer')} />}
                 />
-                <PermissionRow
+                <ContainerwithSwitch
+                    backgroundColor="#131318"
                     title="Manage Posts"
                     description={`Allow ${isModerator ? 'moderators' : 'regular users'} to delete or pin other members' posts.`}
-                    value={perms.managePosts}
-                    onValueChange={() => togglePerm('managePosts')}
+
+                    customSwitch={<CustomSwitch value={perms.managePosts} onValueChange={() => togglePerm('managePosts')} />}
                 />
-                <PermissionRow
+                <ContainerwithSwitch
+                    backgroundColor="#131318"
                     title="Moderate Members"
                     description={`Allow ${isModerator ? 'moderators' : 'regular users'} to kick or ban troublesome members from this server.`}
-                    value={perms.kickMembers}
-                    onValueChange={() => togglePerm('kickMembers')}
+
+                    customSwitch={<CustomSwitch value={perms.kickMembers} onValueChange={() => togglePerm('kickMembers')} />}
+
                 />
-                <PermissionRow
+                <ContainerwithSwitch
+                    backgroundColor="#131318"
                     title="Create Posts"
                     description={`Allow ${isModerator ? 'moderators' : 'regular users'} to write and publish new posts in the community.`}
-                    value={perms.createPosts}
-                    onValueChange={() => togglePerm('createPosts')}
+
+                    customSwitch={<CustomSwitch value={perms.createPosts} onValueChange={() => togglePerm('createPosts')} />}
                 />
-                <PermissionRow
+                <ContainerwithSwitch
+                    backgroundColor="#131318"
                     title="Send Invites"
                     description={`Allow ${isModerator ? 'moderators' : 'regular users'} to generate invite codes for new members.`}
-                    value={perms.sendInvites}
-                    onValueChange={() => togglePerm('sendInvites')}
+
+                    customSwitch={<CustomSwitch value={perms.sendInvites} onValueChange={() => togglePerm('sendInvites')} />}
                 />
+
             </ScrollView>
         </View>
     )

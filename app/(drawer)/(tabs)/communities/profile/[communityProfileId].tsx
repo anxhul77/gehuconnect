@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,27 +12,23 @@ import {
   Pressable,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-
-import Ionicons from "react-native-vector-icons/Ionicons";
-import Feather from "react-native-vector-icons/Feather";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { Entypo, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, Entypo, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { useGetCommunityPostsQuery, useGetCommunityProfileQuery } from "@/src/features/community.api";
+import { useGetCommunityPostsQuery, useGetCommunityProfileQuery } from "@/src/features/community/community.api";
 import { CommunityPostsRes } from "@/src/types/types";
 import { FlashList } from "@shopify/flash-list";
-import Feedpostcard from "@/app/components/Feedpostcard";
+import Feedpostcard from "@/app/components/CommunityPosts/Feedpostcard";
 import { useRouter } from "expo-router";
+import { ScrollView } from "react-native-gesture-handler";
+import { RotateInDownLeft } from "react-native-reanimated";
 
 
-const { width } = Dimensions.get("window");
-
-const BANNER_H = 220;
-const HEADER_H = 56;
+const BANNER_H = 210;
+const HEADER_H = 68;
 const SCROLL_DIST = BANNER_H - HEADER_H;
 
-const GRID_GAP = 1.5;
-const GRID_SIZE = (width - GRID_GAP * 2) / 3;
+
+
 
 const TABS = [
   {
@@ -182,11 +178,11 @@ function TabBar({
     </View>
   );
 }
-const MENU_ITEMS = [
+const MENU_ITEMS = (communityProfileId: string) => [
   { icon: 'pricetag', label: 'Create Channel', route: '/components/community/CreateChannel' },
-  { icon: 'calendar', label: 'Create Event', route: '/components/community/Settings' },
-  { icon: 'folder-open-sharp', label: 'Create Category', route: '/components/community/Settings' },
-  { icon: 'settings-sharp', label: 'Settings', route: '/components/community/Settings' },
+  { icon: 'calendar', label: 'Create Event', route: `/components/community/settings/Settings/${communityProfileId}` },
+  { icon: 'folder-open-sharp', label: 'Create Category', route: `/components/community/settings/Settings/${communityProfileId}` },
+  { icon: 'settings-sharp', label: 'Settings', route: `/components/community/settings/Settings/${communityProfileId}` },
   { icon: 'warning-sharp', label: 'Report', route: '/components/marketplace/OfferPage' },
   { icon: 'help-circle-outline', label: 'Help & Support', route: '/components/HelpSupport' },
 ]
@@ -216,7 +212,34 @@ export default function CommunityProfileScreen() {
   const { data: communityData, isLoading: isCommunityDataLoading } = useGetCommunityProfileQuery(communityId);
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  const iconActivityOpacity = useRef(new Animated.Value(0)).current;
+  const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
+  const resetHideTimer = useCallback(() => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+
+    Animated.timing(iconActivityOpacity, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+
+    hideTimer.current = setTimeout(() => {
+      Animated.timing(iconActivityOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, 2500);
+  }, [iconActivityOpacity]);
+
+  useEffect(() => {
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, []);
+
+  console.log(communityData)
   const isLoading = false;
 
   const headerBgOpacity = scrollY.interpolate({
@@ -224,6 +247,14 @@ export default function CommunityProfileScreen() {
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
+
+  const combinedIconOpacity = useMemo(() => {
+    return Animated.add(iconActivityOpacity, headerBgOpacity).interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [0, 1, 1],
+      extrapolate: "clamp",
+    });
+  }, [iconActivityOpacity, headerBgOpacity]);
 
   const titleOpacity = scrollY.interpolate({
     inputRange: [SCROLL_DIST - 40, SCROLL_DIST],
@@ -254,54 +285,68 @@ export default function CommunityProfileScreen() {
     outputRange: [0, -10],
     extrapolate: "clamp",
   });
-
+  const tags = communityData?.tags || [];
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onTouchStart={resetHideTimer} onTouchMove={resetHideTimer}>
 
-      <Animated.View
-        style={[
-          styles.header,
-          {
-            backgroundColor: headerBgOpacity.interpolate({
-              inputRange: [0, 1],
-              outputRange: [
-                "rgba(0,0,0,0)",
-                "rgba(0,0,0,0.95)",
-              ],
-            }),
-          },
-        ]}
-      >
+      <Animated.View style={styles.header}>
+
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              opacity: headerBgOpacity,
+              overflow: "hidden",
+              backgroundColor: "#000",
+            },
+          ]}
+        >
+          {communityData?.bannerUrl ? (
+            <Image
+              source={{ uri: communityData.bannerUrl }}
+              style={StyleSheet.absoluteFillObject}
+              resizeMode="cover"
+              blurRadius={25}
+            />
+          ) : null}
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: "rgba(0, 0, 0, 0.5)" },
+            ]}
+          />
+        </Animated.View>
+
         <SafeAreaView edges={["top"]}>
           <View style={styles.headerContent}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <TouchableOpacity style={styles.headerBtn}>
-                <Ionicons
-                  name="arrow-back"
-                  size={22}
-                  color="#fff"
-                />
+
+            <Animated.View style={{ opacity: combinedIconOpacity }}>
+              <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
+                <Ionicons name="close" size={28} color="#fff" />
               </TouchableOpacity>
+            </Animated.View>
 
-              <Animated.Text
-                style={[
-                  styles.headerTitle,
-                  {
-                    opacity: titleOpacity,
-                  },
-                ]}
-              >
-                {name}
-              </Animated.Text>
-            </View>
+            <Animated.Text
+              style={[
+                styles.headerTitle,
+                {
+                  opacity: titleOpacity,
+                },
+              ]}
+            >
+              {name}
+            </Animated.Text>
 
-            <Pressable style={styles.headerBtn} onPress={() => setMenuVisible(true)}>
-              <Entypo
-                name="dots-three-vertical"
-                size={18}
-                color="white"
-              />
-            </Pressable>
+
+            <Animated.View style={{ opacity: combinedIconOpacity }}>
+              <Pressable style={styles.headerBtn} onPress={() => setMenuVisible(true)}>
+                <Entypo
+                  name="dots-three-vertical"
+                  size={18}
+                  color="white"
+                />
+              </Pressable>
+            </Animated.View>
           </View>
         </SafeAreaView>
       </Animated.View>
@@ -316,6 +361,9 @@ export default function CommunityProfileScreen() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           {
             useNativeDriver: true,
+            listener: () => {
+              resetHideTimer();
+            },
           }
         )}
       >
@@ -358,9 +406,8 @@ export default function CommunityProfileScreen() {
                 style={styles.avatar}
               />
 
-              <View style={styles.onlineDot} />
-            </Animated.View>
 
+            </Animated.View>
             <View style={styles.actionsRow}>
               {isJoinedParam ?
                 <TouchableOpacity style={styles.joinBtn}>
@@ -370,23 +417,13 @@ export default function CommunityProfileScreen() {
                   <Text style={styles.joinBtnText}>Join</Text>
                 </TouchableOpacity>}
 
+              <View style={styles.iconWrapper}>
+                <Entypo name="share" size={20} color="#fff" />
+              </View>
 
-              <TouchableOpacity style={styles.iconBtn}>
-                <Feather
-                  name="bell"
-                  size={18}
-                  color="#F2F3F5"
-                />
-              </TouchableOpacity>
 
-              <TouchableOpacity style={styles.iconBtn}>
-                <Feather
-                  name="share-2"
-                  size={18}
-                  color="#F2F3F5"
-                />
-              </TouchableOpacity>
             </View>
+
           </View>
 
 
@@ -409,55 +446,50 @@ export default function CommunityProfileScreen() {
                 c/{name}
               </Text>
 
-              <View style={styles.dot} />
 
-              <View style={styles.verifiedBadge}>
-                <Text style={styles.verifiedText}>
-                  VERIFIED COMMUNITY
-                </Text>
+
+
+            </View>
+            <View style={styles.statsRow}>
+              <View style={styles.statsItem}>
+                <Text style={styles.statsNumber}>4.8k Members</Text>
+
+              </View>
+              <View style={{ borderRadius: 100, backgroundColor: "#888", width: 4, height: 4 }}></View>
+              <View style={styles.statsItem}>
+                <Text style={styles.statsNumber}>123 Posts</Text>
+
+              </View>
+              <View style={{ borderRadius: 100, backgroundColor: "#888", width: 4, height: 4 }}></View>
+              <View style={styles.statsItem}>
+                <Text style={styles.statsNumber}>4.5k Views </Text>
+
               </View>
             </View>
           </View>
 
 
-          <View style={styles.statsRow}>
-            <View>
-              <Text style={styles.statsNumber}>{communityData?.memberCount}</Text>
-              <Text style={styles.statsLabel}>MEMBERS</Text>
-            </View>
 
-            <View>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={styles.greenDot} />
-                <Text style={styles.statsNumber}>1.2k</Text>
-              </View>
 
-              <Text style={styles.statsLabel}>ONLINE</Text>
-            </View>
 
-            <View>
-              <Text style={styles.statsNumber}>{communityData?.postCount}</Text>
-              <Text style={styles.statsLabel}>POSTS</Text>
-            </View>
-          </View>
-
-          <View style={{ marginTop: 20 }}>
+          <View style={{}}>
             <Text style={styles.description}>
               {communityData?.description}
             </Text>
 
 
-            <View style={styles.tagsWrap}>
-              {communityData?.tags.map((tag) => (
-                <View key={tag} style={styles.tag}>
-                  <Text style={styles.tagText}>{tag}</Text>
+            <ScrollView contentContainerStyle={styles.tagsWrap} horizontal={true}>
+              {tags?.map((tag, i) => (
+                <View key={tag?.id ?? i} style={styles.tag}>
+                  <Text style={styles.tagText}># {tag?.name}</Text>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
 
-
         </View>
+
+
 
         <View style={styles.contentSection}>
           <TabBar
@@ -510,7 +542,7 @@ export default function CommunityProfileScreen() {
                 position: 'absolute',
 
                 right: 5,
-                backgroundColor: 'black',
+                backgroundColor: '#121212',
                 borderRadius: 16,
                 borderWidth: 1,
                 paddingVertical: 6,
@@ -522,7 +554,7 @@ export default function CommunityProfileScreen() {
                 elevation: 12,
               }}
             >
-              {MENU_ITEMS.map((item, index) => (
+              {MENU_ITEMS(communityProfileId).map((item, index) => (
                 <TouchableOpacity
                   key={item.label}
                   onPress={() => handleMenuPress(item.route)}
@@ -531,8 +563,7 @@ export default function CommunityProfileScreen() {
                     alignItems: 'center',
                     paddingHorizontal: 16,
                     paddingVertical: 13,
-                    borderBottomWidth: index < MENU_ITEMS.length - 1 ? 1 : 0,
-                    borderBottomColor: '#2A2A2A',
+
                   }}
                 >
                   <Ionicons name={item.icon as any} size={18} color={item.route ? "#FFFFFF" : '#B3B3B3'} style={{ marginRight: 12 }} />
@@ -565,11 +596,12 @@ const styles = StyleSheet.create({
   },
 
   headerContent: {
+
     height: HEADER_H,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
+    paddingHorizontal: 6,
   },
 
   headerBtn: {
@@ -583,7 +615,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
-    marginLeft: 8,
+
   },
 
   banner: {
@@ -599,6 +631,7 @@ const styles = StyleSheet.create({
   profileSection: {
     paddingHorizontal: 20,
     marginTop: -50,
+
   },
 
   profileTop: {
@@ -611,41 +644,46 @@ const styles = StyleSheet.create({
 
   avatar: {
     width: 86,
-    height: 90,
-    borderRadius: 28,
-    borderWidth: 4,
-    borderColor: "#000",
+    height: 86,
+    borderRadius: 100,
+
   },
 
-  onlineDot: {
-    position: "absolute",
-    bottom: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#23A559",
-    borderWidth: 4,
-    borderColor: "#000",
-  },
+
 
   actionsRow: {
 
 
     flexDirection: "row",
     alignItems: "center",
-
+    gap: 14
 
   },
 
   joinBtn: {
-    backgroundColor: "#5865F2",
-    paddingHorizontal: 20,
+
+
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0a0a0a",
+    paddingHorizontal: 15,
     paddingVertical: 6,
     borderRadius: 999,
-    marginRight: 7,
+    marginRight: 3,
+    borderWidth: 1,
+    borderColor: "#2d2d2d"
   },
+  iconWrapper: {
+    borderRadius: 100,
+    backgroundColor: "#0a0a0a",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: "#2d2d2d",
+    alignItems: "center",
+    justifyContent: "center",
 
+  },
   joinBtnText: {
     color: "#fff",
     fontWeight: "700",
@@ -654,15 +692,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
   },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
+
 
   titleRow: {
     flexDirection: "row",
@@ -678,7 +708,7 @@ const styles = StyleSheet.create({
   subRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 2,
   },
 
   communityHandle: {
@@ -686,13 +716,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#555",
-    marginHorizontal: 8,
-  },
+
 
   verifiedBadge: {
     backgroundColor: "#151515",
@@ -703,38 +727,38 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  verifiedText: {
-    color: "#fff",
-    fontSize: 10,
-    fontWeight: "700",
-  },
+
 
   statsRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 28,
-  },
+    paddingVertical: 10,
+    paddingRight: 25
 
+
+
+  },
+  statsItem: {
+
+    flexDirection: "column",
+
+
+  },
   statsNumber: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "800",
+    color: "#ccc",
+    fontSize: 14,
+    fontWeight: "700",
   },
 
   statsLabel: {
     color: "#666",
-    fontSize: 11,
-    marginTop: 4,
+    fontSize: 12,
+
     fontWeight: "700",
   },
 
-  greenDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#23A559",
-    marginRight: 6,
-  },
+
 
   description: {
     color: "#ccc",
@@ -743,29 +767,31 @@ const styles = StyleSheet.create({
 
   tagsWrap: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 14,
+
+    marginVertical: 16,
+    gap: 8,
+
   },
 
   tag: {
-    backgroundColor: "#151515",
+    backgroundColor: "#121212",
     borderWidth: 1,
-    borderColor: "#222",
+    borderColor: "#212121",
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginRight: 8,
+
 
   },
 
   tagText: {
-    color: "#888",
+    color: "#fff",
     fontSize: 12,
     fontWeight: "600",
   },
 
   contentSection: {
-    marginTop: 15,
+
 
 
     overflow: "hidden",
@@ -775,33 +801,37 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#161616",
-    backgroundColor: "black"
+    borderBottomWidth: 0.6,
+    borderColor: "#303030",
+
+    paddingTop: 10,
+
   },
 
   tabItem: {
     flex: 1,
+    paddingBottom: 14,
     alignItems: "center",
-    paddingVertical: 14,
+
   },
 
   tabLabel: {
     color: "#555",
-    fontSize: 13,
-    fontWeight: "700",
-    marginTop: 6,
+    fontSize: 14,
+    fontWeight: "800",
+
   },
 
   tabLabelActive: {
     color: "#fff",
+
   },
 
   tabUnderline: {
     position: "absolute",
     bottom: 0,
-    left: "20%",
-    right: "20%",
+    left: 0,
+    right: 0,
     height: 2,
     backgroundColor: "#fff",
     borderRadius: 999,

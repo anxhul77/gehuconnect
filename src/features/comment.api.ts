@@ -1,14 +1,21 @@
+
 import { api } from "../store/api";
-import { CommentDto, CommentResponseDto, CommentSortType, NestedCommentResponse, PostCommentResponse } from "../types/types";
+import { CommentDto, CommentReactionType, CommentResponseDto, CommentSortType, PostCommentResponse } from "../types/types";
+import { buildComments, markCommentFailed, mergeRepliesIntoComments, onAddComment, replaceTempComment } from "../utils/CommentUtils";
+
+import { feedApi } from "./feed.api";
+import { communityApi } from "./community/community.api";
+
+
 
 
 
 export const commentApi = api.injectEndpoints({
     endpoints: (builder) => ({
         getPostComments: builder.query<
-            PostCommentResponse,
+            PostCommentResponse & { commentIndexMap: Record<number, number>, clientIdMap: Record<string, boolean> },
             {
-                postId: number;
+                postId: string;
                 cursor: string;
                 commentSortType: CommentSortType | string;
                 limit?: number;
@@ -19,70 +26,87 @@ export const commentApi = api.injectEndpoints({
                 method: "GET",
                 params: { postId, cursor, commentSortType, limit },
             }),
-            // Merge pages for cursor-based pagination
+            transformResponse: (response: PostCommentResponse & { commentIndexMap: Record<number, number> }) => {
+                const { comments, commentIndexMap, clientIdMap } = buildComments(response.comments)
+                return { ...response, comments: comments, commentIndexMap: commentIndexMap, clientIdMap: clientIdMap };
+            },
             serializeQueryArgs: ({ queryArgs }) => ({
                 postId: queryArgs.postId,
                 commentSortType: queryArgs.commentSortType,
             }),
-            merge: (currentCache, newItems, { arg }) => {
-                if (arg.cursor === "0") {
-                    // Reset — first page
-                    currentCache.comments = newItems.comments;
-                } else {
-                    // Append subsequent pages
-                    currentCache.comments.push(...newItems.comments);
-                }
-                currentCache.cursor = newItems.cursor;
-                currentCache.hasNext = newItems.hasNext;
-            },
+
             forceRefetch: ({ currentArg, previousArg }) =>
                 currentArg?.cursor !== previousArg?.cursor,
-            providesTags: (result) =>
-                result
-                    ? [
-                        ...result.comments.map(({ commentId }) => ({
-                            type: "Comment" as const,
-                            id: commentId.toString(),
-                        })),
-                        { type: "Comment", id: "LIST" },
-                    ]
-                    : [{ type: "Comment", id: "LIST" }],
+
+
         }),
 
         getReplies: builder.query<
-            PostCommentResponse,
-            { parentId: number; cursor: string; limit?: number }
+            PostCommentResponse & { commentIndexMap: Record<number, number> },
+            { parentId: number | null; isLoadMore?: boolean; cursor: string; limit?: number }
         >({
-            query: ({ parentId, cursor, limit = 20 }) => ({
-                url: "/comment/getReplies",
-                method: "GET",
-                params: { parentId, cursor, limit },
-            }),
+            query: ({ parentId, cursor, limit = 20 }) => (
 
-            serializeQueryArgs: ({ queryArgs }) => {
-                return { parentId: queryArgs.parentId };
-            },
-            merge: (currentCache, newItems, { arg }) => {
-                if (arg.cursor === "0") {
-                    return newItems;
+                {
+                    url: "/comment/getReplies",
+                    method: "GET",
+                    params: { parentId, cursor, limit },
                 }
-                currentCache.comments.push(...newItems.comments);
-                currentCache.cursor = newItems.cursor;
-                currentCache.hasNext = newItems.hasNext;
-            },
-            forceRefetch: ({ currentArg, previousArg }) => {
-                return currentArg?.cursor !== previousArg?.cursor;
-            },
-            providesTags: (result, _err, { parentId }) =>
-                result?.comments
-                    ? [
-                        ...result.comments.map(({ commentId }) => ({
-                            type: "Comment" as const,
-                            id: `reply-${commentId}`,
-                        })),
-                        { type: "Comment", id: `REPLIES-${parentId}` },
-                    ]
-                    : [{ type: "Comment", id: `REPLIES-${parentId}` }],
+            ),
+            async onQueryStarted(
+                { parentId, isLoadMore },
+                { dispatch, getState, queryFulfilled }
+            ) {
+
+                try {
+
+                    const { data: response } =
+                        await queryFulfilled;
+                    console.log("data", response)
+                    const state = (getState as any)();
+
+                    const queries =
+                        state?.api?.queries || {};
+
+                    for (const key of Object.keys(queries)) {
+
+                        if (!key.startsWith("getPostComments"))
+                            continue;
+
+                        const originalArgs =
+                            queries[key].originalArgs;
+
+                        dispatch(
+                            commentApi.util.updateQueryData(
+                                "getPostComments",
+                                originalArgs,
+                                draft => {
+                                    try {
+                                        mergeRepliesIntoComments(
+                                            draft as PostCommentResponse &
+                                            { commentIndexMap: Record<number, number> } & { clientIdMap: Record<string, boolean> },
+                                            parentId,
+
+
+                                            response,
+                                            isLoadMore
+                                        );
+                                        console.log("after--------------------------------------------------------------------------------------------")
+                                    } catch (e) {
+                                        console.log(e)
+                                    }
+
+
+                                }
+                            )
+                        );
+
+                    }
+
+                } catch {
+
+                }
+            }
         }),
 
         addComment: builder.mutation<CommentResponseDto, CommentDto>({
@@ -92,134 +116,183 @@ export const commentApi = api.injectEndpoints({
                 body,
             }),
             async onQueryStarted(arg, { dispatch, getState, queryFulfilled }) {
+                const patches: any[] = []
+                const tempId = Date.now()
+                const state = getState() as any
+                const queries =
+                    state?.api?.queries || {};
+                let originalArgs: any;
+                for (const key of Object.keys(queries)) {
 
-                const tempId = Date.now() * -1;
+                    if (!key.startsWith("getPostComments"))
+                        continue;
 
-                const patchResults: any[] = [];
+                    originalArgs =
+                        queries[key].originalArgs;
 
-                // Only optimistically update top-level comments (no parentCommentId)
-                if (!arg.parentCommentId) {
-                    patchResults.push(dispatch(
-                        commentApi.util.updateQueryData(
-                            "getPostComments",
-                            {
-                                postId: Number(arg.postId),
-                                commentSortType: CommentSortType.LATEST,
-                            } as any,
-                            (draft) => {
-                                draft.comments.unshift({
-                                    commentId: tempId,
-                                    content: arg.content || "",
-                                    author: arg.author || { author: "You" },
-                                    likeCount: 0,
-                                    liked: false,
-                                    disliked: false,
-                                    replyCount: 0,
-                                    isSending: true
-                                });
+                    const patch = dispatch(commentApi.util.updateQueryData(
+                        "getPostComments",
+                        originalArgs,
+                        draft => {
+                            try {
+                                onAddComment(draft as PostCommentResponse &
+                                { commentIndexMap: Record<number, number> } & { clientIdMap: Record<string, boolean> }, arg.parentCommentId, tempId, arg.content, arg.clientId)
+
+                            } catch (e) {
+                                console.log(e)
                             }
-                        )
-                    ));
-                }
 
-                // Optimistically increment the comment count in feed api cache entries
-                const state = getState() as any;
-                const feedQueries = state.api?.queries || {};
 
-                for (const key of Object.keys(feedQueries)) {
-                    if (key.startsWith('getFeedPosts(')) {
-                        const originalArgs = feedQueries[key].originalArgs;
-                        if (originalArgs) {
-                            patchResults.push(dispatch(
-                                api.util.updateQueryData('getFeedPosts' as never, originalArgs as never, (draft: any) => {
-
-                                    const posts = Array.isArray(draft?.post?.communityPosts)
-                                        ? draft.post.communityPosts
-                                        : (draft?.post?.communityPosts ? [draft.post.communityPosts] : []);
-
-                                    const post = posts.find((p: any) => String(p.postId) === String(arg.postId));
-                                    if (post && post.statsDto && typeof post.statsDto === 'object') {
-                                        post.statsDto.comments = (Number(post.statsDto.comments) || 0) + 1;
-                                    }
-                                })
-                            ));
                         }
-                    }
+                    ))
+                    patches.push({ patch, originalArgs })
+                }
+                let communityId;
+                const feedPatch = dispatch(
+                    feedApi.util.updateQueryData(
+                        "getFeedPosts",
+                        undefined as any,
+                        draft => {
+                            console.log("updating deedpost cache------------------------------------------------")
+                            const index = draft.postIndexMap[Number(arg.postId)]
+                            console.log(draft.postIndexMap)
+                            console.log("post id", arg.postId, index)
+                            if (index != undefined) {
+                                console.log(draft.communityPosts[index])
+                                draft.communityPosts[index].statsDto.comments++;
+                                console.log(draft.communityPosts[index].statsDto.comments)
+                                communityId = draft.communityPosts[index].communityId;
+                            }
+                        }
+                    )
+                );
+                let communityPatch: any;
+                if (communityId != undefined) {
+                    communityPatch = dispatch(communityApi.util.updateQueryData(
+                        "getCommunityPosts",
+                        communityId as any,
+                        draft => {
+                            console.log("communitypatchupdating")
+                            const index = draft.postIndexMap[Number(arg.postId)]
+                            if (index != undefined) {
+                                draft.communityPosts[index].statsDto.comments++;
+
+                            }
+                        }
+                    ))
                 }
 
                 try {
-                    // Wait for the server response
-                    const { data: serverComment } = await queryFulfilled;
-
-                    if (!arg.parentCommentId) {
-                        // On success, replace the temporary comment with the real one from the server
+                    const { data } = await queryFulfilled
+                    for (const { originalArgs } of patches) {
                         dispatch(
                             commentApi.util.updateQueryData(
                                 "getPostComments",
-                                {
-                                    postId: Number(arg.postId),
-                                    commentSortType: CommentSortType.LATEST,
-                                } as any,
-                                (draft) => {
-                                    const index = draft.comments.findIndex(c => c.commentId === tempId);
-                                    if (index !== -1) {
-                                        draft.comments[index] = serverComment;
-                                    }
+                                originalArgs,
+                                draft => {
+                                    replaceTempComment(draft as PostCommentResponse & { commentIndexMap: Record<number, number> }, tempId, data);
                                 }
                             )
                         );
-                    } else {
-                        const numericParentId = Number(arg.parentCommentId);
+                    }
+                }
+                catch (e) {
+                    console.log(e)
+                    for (const { originalArgs } of patches) {
+                        dispatch(commentApi.util.updateQueryData(
+                            "getPostComments",
+                            originalArgs,
+                            draft => {
 
-                        // Push new reply into getReplies cache optimistically
-                        patchResults.push(
-                            dispatch(
-                                commentApi.util.updateQueryData(
-                                    "getReplies",
-                                    { parentId: numericParentId } as any,
-                                    (draft) => {
-                                        if (draft && draft.comments) {
-                                            draft.comments.push(serverComment);
-                                        }
-                                    }
-                                )
-                            )
+                                markCommentFailed(
+                                    draft as PostCommentResponse & { commentIndexMap: Record<number, number> },
+                                    tempId
+                                );
+
+                            }
+                        )
                         );
+                    }
+                    feedPatch?.undo()
+                    communityPatch?.undo()
+                }
 
-                        // Increment replyCount on the parent comment in getPostComments cache
-                        patchResults.push(
-                            dispatch(
-                                commentApi.util.updateQueryData(
-                                    "getPostComments",
-                                    { postId: Number(arg.postId), commentSortType: CommentSortType.LATEST } as any,
-                                    (draft) => {
-                                        if (draft && draft.comments) {
-                                            const parentComment = draft.comments.find(
-                                                c => c.commentId === numericParentId
-                                            );
-                                            if (parentComment) {
-                                                parentComment.replyCount = (parentComment.replyCount || 0) + 1;
+
+            }
+        }),
+        commentReaction: builder.mutation<void, { commentId: number, commentReaction: CommentReactionType }>({
+            query: ({ commentId, commentReaction }) => ({
+                url: "/comment/reaction",
+                method: "POST",
+                params: { commentId, commentReaction }
+            }),
+            async onQueryStarted({ commentId, commentReaction }, { dispatch, getState, queryFulfilled }) {
+                const patches: any[] = [];
+                const state = getState() as any;
+                const queries = state?.api?.queries || {};
+
+                for (const key of Object.keys(queries)) {
+                    if (!key.startsWith("getPostComments")) continue;
+                    const originalArgs = queries[key].originalArgs;
+                    const patch = dispatch(
+                        commentApi.util.updateQueryData("getPostComments", originalArgs, draft => {
+                            try {
+                                const index = draft.commentIndexMap[commentId];
+                                if (index !== undefined) {
+                                    const comment = draft.comments[index];
+                                    if (commentReaction === CommentReactionType.LIKE) {
+                                        if (comment.liked) {
+                                            comment.liked = false;
+                                            comment.likeCount = Math.max(0, (comment.likeCount || 0) - 1);
+                                        } else {
+                                            comment.liked = true;
+                                            comment.likeCount = (comment.likeCount || 0) + 1;
+                                            if (comment.disliked) {
+                                                comment.disliked = false;
+                                            }
+                                        }
+                                    } else if (commentReaction === CommentReactionType.DISLIKE) {
+                                        if (comment.disliked) {
+                                            comment.disliked = false;
+                                        } else {
+                                            comment.disliked = true;
+                                            if (comment.liked) {
+                                                comment.liked = false;
+                                                comment.likeCount = Math.max(0, (comment.likeCount || 0) - 1);
                                             }
                                         }
                                     }
-                                )
-                            )
-                        );
-                    }
-                } catch {
-                    // Revert cache if the mutation fails
-                    patchResults.forEach(patch => patch.undo());
+                                }
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        })
+                    );
+                    patches.push(patch);
                 }
-            },
-            // Since we manually manage the cache seamlessly, we can omit invalidatesTags to prevent an extra network request!
-            // invalidatesTags: [{ type: "Comment", id: "LIST" }],
+                try {
+                    await queryFulfilled;
+                } catch (e) {
+                    console.log(e);
+                    for (const patch of patches) {
+                        patch.undo();
+                    }
+                }
+            }
         }),
-    }),
+    }
+
+    )
 });
+
+
+
 
 export const {
     useGetPostCommentsQuery,
     useLazyGetPostCommentsQuery,
     useGetRepliesQuery,
+    useLazyGetRepliesQuery,
+    useCommentReactionMutation,
     useAddCommentMutation,
 } = commentApi;

@@ -13,7 +13,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 
 
 import AcadmicsHeader from '@/app/components/acadmecis/AcadmecisHeader';
-import ApplicationHeader from '@/app/components/ApplicationHeader';
+
 
 
 export default function _Layout() {
